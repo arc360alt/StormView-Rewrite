@@ -1,0 +1,46 @@
+.hourly-scroll {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.hourly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px;
+  min-width: 52px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: default;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+.hourly-item:hover {
+  background: var(--surface-active);
+}
+
+.hourly-time {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+.hourly-precip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  color: #60A5FA;
+}
+
+.hourly-temp {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}

@@ -1,0 +1,296 @@
+/* =============================================
+   RadarScrubber — floating pill at bottom
+   ============================================= */
+
+.scrubber-wrap {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 450;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: calc(100vw - 680px);
+  min-width: 360px;
+  max-width: 900px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Mobile: full-width scrubber, centered */
+.scrubber-wrap--mobile {
+  width: calc(100vw - 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 12px;
+  min-width: unset;
+  max-width: unset;
+}
+
+/* Adjust pill width when sidebar is on left (desktop only) */
+.scrubber-wrap--sidebar-left {
+  left: calc(var(--sidebar-width) + 24px + 50%);
+  transform: translateX(-50%);
+}
+
+.scrubber-pill {
+  width: 100%;
+  background: var(--scrubber-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+  padding: 10px 14px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+/* ---- Top row: controls + time ---- */
+.scrubber-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* Play/pause */
+.scrubber-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  box-shadow: 0 2px 8px var(--accent-glow);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.scrubber-play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.scrubber-play-btn:active { transform: scale(0.95); }
+
+/* Speed selector */
+.scrubber-speed {
+  display: flex;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 1px;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.speed-btn {
+  padding: 3px 7px;
+  border: none;
+  background: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+.speed-btn:hover { color: var(--text-primary); }
+.speed-btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Time display */
+.scrubber-time-display {
+  flex: 1;
+  text-align: center;
+}
+.scrubber-time-main {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.scrubber-time-date {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.scrubber-nowcast-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  background: var(--nowcast-dim);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--nowcast-color);
+  text-transform: uppercase;
+}
+
+/* Now + Loop buttons */
+.scrubber-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.scrubber-action-btn {
+  padding: 4px 8px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+}
+.scrubber-action-btn:hover {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
+.scrubber-action-btn--active {
+  background: var(--accent-dim);
+  border-color: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* ---- Timeline ---- */
+.scrubber-timeline {
+  position: relative;
+  height: 32px;
+  cursor: pointer;
+}
+
+.timeline-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 5px;
+  background: var(--border-strong);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+/* Past frames: blue fill */
+.timeline-past-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  border-radius: 99px;
+  transition: width 0.1s ease;
+}
+
+/* Nowcast region: green highlight */
+.timeline-nowcast-region {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--nowcast-dim);
+  border-left: 1px solid var(--nowcast-color);
+}
+
+/* Frame tick marks */
+.timeline-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.timeline-tick {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  transition: background 0.1s ease;
+}
+.timeline-tick--past     { background: var(--accent); opacity: 0.5; }
+.timeline-tick--nowcast  { background: var(--nowcast-color); opacity: 0.6; }
+.timeline-tick--active   { background: #fff; opacity: 1; width: 4px; height: 4px; }
+
+/* Draggable thumb */
+.timeline-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--accent), 0 2px 8px rgba(0,0,0,0.4);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 0.05s ease;
+}
+.timeline-thumb--dragging {
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 0 0 4px var(--accent), var(--shadow-glow);
+}
+
+/* Hover tooltip */
+.timeline-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+}
+
+/* ---- Empty state ---- */
+.scrubber-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Frame type legend ---- */
+.scrubber-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}

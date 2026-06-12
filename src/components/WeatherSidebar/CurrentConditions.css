@@ -1,0 +1,83 @@
+.current-conditions {
+  padding-bottom: 16px;
+}
+
+.current-main {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.current-temp-block {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+.current-temp {
+  font-size: 68px;
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.current-temp-unit {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  margin-left: 2px;
+}
+
+.current-condition-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.current-feels {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.current-hilow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hilow-high {
+  font-size: 13px;
+  font-weight: 500;
+  color: #F97316;
+}
+
+.hilow-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border-strong);
+}
+
+.hilow-low {
+  font-size: 13px;
+  font-weight: 500;
+  color: #60A5FA;
+}
+
+.current-sun {
+  display: flex;
+  gap: 16px;
+}
+
+.sun-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}

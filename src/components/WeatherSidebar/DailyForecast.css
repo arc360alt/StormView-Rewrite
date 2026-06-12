@@ -1,0 +1,265 @@
+/* ── outer list ─────────────────────────────────────────── */
+.daily-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── card wrapper ───────────────────────────────────────── */
+.daily-card {
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+/* ── summary row ────────────────────────────────────────── */
+.daily-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-xs);
+  transition: background 0.12s ease;
+  outline: none;
+}
+.daily-row:hover {
+  background: var(--surface-hover);
+}
+.daily-card--open .daily-row {
+  background: var(--surface-elevated);
+}
+
+.daily-day {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.daily-precip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  color: #60A5FA;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.daily-low {
+  font-size: 12px;
+  color: var(--text-secondary);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.daily-bar-wrap {
+  flex: 1;
+  position: relative;
+  height: 4px;
+  background: var(--surface-elevated);
+  border-radius: 99px;
+}
+.daily-card--open .daily-bar-wrap {
+  background: var(--border);
+}
+
+.daily-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #60A5FA, #FB923C);
+}
+
+.daily-high {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.daily-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.daily-chevron--up {
+  transform: rotate(180deg);
+}
+
+/* ── smooth expand (grid trick) ─────────────────────────── */
+.daily-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.daily-expand--open {
+  grid-template-rows: 1fr;
+}
+.daily-expand-inner {
+  min-height: 0;
+  min-width: 0; /* prevent scroll child from expanding grid container width */
+}
+
+/* ── expanded content ───────────────────────────────────── */
+.day-detail {
+  padding: 8px 6px 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface-elevated);
+  min-width: 0; /* prevent scroll child min-content from widening ancestors */
+}
+
+/* ── section ────────────────────────────────────────────── */
+.dd-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* same — stop hourly scroll items from expanding this section */
+}
+
+.dd-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── hourly strip ───────────────────────────────────────── */
+.dd-hourly-scroll {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.dd-hourly-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+.dd-hourly-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dd-hourly-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+.dd-hourly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 42px;
+  padding: 6px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.dd-h-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dd-h-precip {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 9px;
+  color: #60A5FA;
+}
+
+.dd-h-temp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dd-no-data {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── details grid ───────────────────────────────────────── */
+.dd-grid {
+  display: flex;
+  gap: 5px;
+}
+
+/* Each column takes exactly half the grid */
+.dd-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dd-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 7px 8px;
+  background: var(--surface);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.dd-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-muted);
+}
+
+.dd-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dd-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

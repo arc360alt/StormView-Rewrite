@@ -1,0 +1,143 @@
+/* =============================================
+   WeatherSidebar — styles
+   ============================================= */
+
+.weather-sidebar {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  width: var(--sidebar-width);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  animation: slideInLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.weather-sidebar--left  { left: 12px; }
+.weather-sidebar--right { right: 12px; animation-name: slideInRight; }
+
+/* Glass panel */
+.sidebar-glass {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* ---- Header ---- */
+.sidebar-header {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-location-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-location-state {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.sidebar-api-badge {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.sidebar-api-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* ---- Scrollable body ---- */
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 12px;
+}
+
+/* ---- Section ---- */
+.sidebar-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-section:last-child {
+  border-bottom: none;
+}
+
+.sidebar-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* ---- Skeleton states ---- */
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.skel-lg { height: 48px; }
+.skel-sm { width: 60%; }
+
+/* ---- Error ---- */
+.sidebar-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 13px;
+}
+
+.sidebar-error-icon {
+  color: var(--danger);
+}
+
+/* ---- NWS fallback notice ---- */
+.sidebar-notice {
+  margin: 8px 16px 0;
+  padding: 8px 12px;
+  background: var(--warning-dim);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--warning);
+  line-height: 1.5;
+}

@@ -1,0 +1,157 @@
+/* =============================================
+   WeatherBottomSheet — mobile only
+   ============================================= */
+
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 490;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
+}
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 495;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100%);
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  touch-action: none;
+}
+
+.bottom-sheet--open {
+  transform: translateY(0);
+}
+
+/* Drag handle */
+.bottom-sheet-handle-area {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px 8px;
+  cursor: grab;
+}
+.bottom-sheet-handle-area:active {
+  cursor: grabbing;
+}
+.bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border-strong);
+}
+
+/* Sheet header */
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bottom-sheet-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bottom-sheet-location-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.bottom-sheet-location-state {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.bottom-sheet-api-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.bottom-sheet-api-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* Scrollable body */
+.bottom-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+
+/* ---- Floating trigger button ---- */
+.mobile-weather-btn {
+  position: fixed;
+  /* scrubber pill is ~118px tall at bottom: 12px → top at ~130px; add 12px gap */
+  bottom: 146px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 450;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.mobile-weather-btn:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+.mobile-weather-btn-temp {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.mobile-weather-btn-condition {
+  font-size: 11px;
+  color: var(--text-secondary);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-weather-btn-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+.mobile-weather-btn--open .mobile-weather-btn-chevron {
+  transform: rotate(180deg);
+}
