@@ -18,8 +18,8 @@ const COLOR_SCHEMES = [
   { id: 3, name: 'Purple',   gradient: 'linear-gradient(90deg, #00000000, #6600cc, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000)' },
   { id: 4, name: 'Nexrad', gradient: 'linear-gradient(90deg, #000, #004000, #008000, #00c000, #ffff00, #ff8000, #ff0000, #cc00cc)' },
   { id: 5, name: 'Green',  gradient: 'linear-gradient(90deg, #000, #003366, #006699, #0099cc, #66ccff, #ffffff)' },
-  { id: 6, name: 'Default',    gradient: 'linear-gradient(90deg, #00000000, #220033, #440066, #8800cc, #ff44ff, #ffaaff)' },
-  { id: 7, name: 'Default but different', gradient: 'linear-gradient(90deg, #00000000, #003380, #0066cc, #00aaff, #aaddff, #ffffff)' },
+  { id: 6, name: 'Default but different',    gradient: 'linear-gradient(90deg, #00000000, #220033, #440066, #8800cc, #ff44ff, #ffaaff)' },
+  { id: 7, name: 'Default', gradient: 'linear-gradient(90deg, #00000000, #003380, #0066cc, #00aaff, #aaddff, #ffffff)' },
   { id: 8, name: 'Dark Sky',     gradient: 'linear-gradient(90deg, #000, #222, #555, #999, #ccc, #fff)' },
 ];
 
@@ -277,6 +277,21 @@ export function SettingsSidebar() {
 
         <div className="settings-body">
           {TAB_CONTENT[settingsTab] ?? <LocationTab />}
+        </div>
+
+        <div className="settings-footer">
+          <div className="settings-footer-text">
+            <span className="settings-footer-beta">BETA</span>
+            StormView is in active development — bugs and missing features are expected.
+          </div>
+          <a
+            href="https://github.com/arc360alt/StormView-Rewrite"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-footer-link"
+          >
+            Report an issue on GitHub →
+          </a>
         </div>
       </div>
     </div>

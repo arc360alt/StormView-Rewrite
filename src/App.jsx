@@ -89,14 +89,25 @@ export default function App() {
         />
       )}
 
-      {/* Settings gear */}
-      <button
-        className={`app-settings-btn ${settingsOpen ? 'app-settings-btn--active' : ''}`}
-        onClick={() => setSettingsOpen(!settingsOpen)}
-        title="Settings"
-      >
-        <Settings size={18} strokeWidth={1.8} />
-      </button>
+      {/* Top-right corner: beta chip + settings gear */}
+      <div className="app-top-corner">
+        <a
+          href="https://github.com/arc360alt/StormView-Rewrite"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="app-beta-chip"
+          title="StormView is in beta — click to report issues on GitHub"
+        >
+          BETA
+        </a>
+        <button
+          className={`app-settings-btn ${settingsOpen ? 'app-settings-btn--active' : ''}`}
+          onClick={() => setSettingsOpen(!settingsOpen)}
+          title="Settings"
+        >
+          <Settings size={18} strokeWidth={1.8} />
+        </button>
+      </div>
 
       {/* Radar scrubber — always visible */}
       <RadarScrubber isMobile={isMobile} />

@@ -79,6 +79,12 @@ const useAppStore = create(
     }),
     {
       name: 'stormview-v1',
+      version: 1,
+      // Keep persisted values on version bump; new keys fall back to initial state defaults.
+      migrate: (state) => state,
+      // Explicit merge: spread defaults first so any new keys added to the store
+      // always have a valid initial value even when loading older stored data.
+      merge: (persisted, current) => ({ ...current, ...persisted }),
       partialize: (s) => ({
         theme: s.theme,
         weatherAPI: s.weatherAPI,

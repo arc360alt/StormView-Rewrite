@@ -10,12 +10,40 @@
   background: var(--bg);
 }
 
-/* Settings gear button — top-right corner */
-.app-settings-btn {
+/* Top-right corner group: beta chip + settings button */
+.app-top-corner {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 450;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-beta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-pill, 999px);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f59e0b;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.app-beta-chip:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.65);
+}
+
+/* Settings gear button */
+.app-settings-btn {
   width: 40px;
   height: 40px;
   background: var(--glass-bg);
