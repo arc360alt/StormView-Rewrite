@@ -42,19 +42,33 @@ export function RadarLayer() {
       opacity: 0,
       tileSize: 256,
       zIndex: 200,
-      keepBuffer: 1,
-      updateWhenZooming: false,
+      keepBuffer: 2,
+      updateWhenIdle: false,
+      // Do NOT set updateWhenZooming: false — it suppresses tile loading during
+      // animation, and Leaflet's post-zoom tile-load chain relies on moveend firing
+      // after zoomend. Pure zoom (no pan) sometimes skips moveend, leaving tiles
+      // unfetched for 30+ seconds until an internal timeout fires.
       attribution: '© Stormcast',
     };
-    // Don't addTo(map) yet — layers with an empty URL immediately fire tile requests
-    // for every visible tile and then NS_BINDING_ABORTED them all when the real URL
-    // arrives. We addTo(map) on the first real setUrl() call instead.
     r.current.A = L.tileLayer('', opts);
     r.current.B = L.tileLayer('', opts);
     r.current.loaded   = { A: -1, B: -1 };
     r.current.fg       = 'A';
     r.current.onMap    = { A: false, B: false };
+
+    // Hard guarantee: whenever zoom ends, immediately redraw both layers so tiles
+    // are requested at the new zoom level without relying on Leaflet's moveend chain.
+    const onZoomEnd = () => {
+      const s = r.current;
+      // Invalidate the loaded-frame cache so the next frame effect re-issues setUrl
+      s.loaded = { A: -1, B: -1 };
+      if (s.A && s.onMap.A) s.A.redraw();
+      if (s.B && s.onMap.B) s.B.redraw();
+    };
+    map.on('zoomend', onZoomEnd);
+
     return () => {
+      map.off('zoomend', onZoomEnd);
       ['A', 'B'].forEach((k) => { try { map.removeLayer(r.current[k]); } catch {} });
     };
   }, [map]);
