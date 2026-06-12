@@ -171,10 +171,10 @@ function DayDetail({ day, hourly, units }) {
           <div className="dd-section-label">Details</div>
           <div className="dd-grid">
             <div className="dd-col">
-              {leftCol.map((d) => <DetailItem key={d.key} {...d} />)}
+              {leftCol.map(({ key: k, ...rest }) => <DetailItem key={k} {...rest} />)}
             </div>
             <div className="dd-col">
-              {rightCol.map((d) => <DetailItem key={d.key} {...d} />)}
+              {rightCol.map(({ key: k, ...rest }) => <DetailItem key={k} {...rest} />)}
             </div>
           </div>
         </div>

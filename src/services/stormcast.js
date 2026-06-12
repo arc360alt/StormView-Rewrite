@@ -7,8 +7,8 @@ const API_BASE = 'https://stormcastapi.arc360hub.com/public/weather-maps.json';
  * Returns a normalized array of frame objects sorted oldest→newest.
  * Each frame: { time, path, host, type: 'past'|'nowcast' }
  */
-export async function fetchRadarFrames() {
-  const res = await fetch(API_BASE, { cache: 'no-cache' });
+export async function fetchRadarFrames(signal) {
+  const res = await fetch(API_BASE, { cache: 'no-cache', signal });
   if (!res.ok) throw new Error(`stormcastapi API error: ${res.status}`);
   const data = await res.json();
 

@@ -1,6 +1,6 @@
 import {
   Droplets, Wind, Eye, Gauge, Thermometer,
-  Sun, Cloud, ArrowUp,
+  Sun, Cloud, ArrowUp, Activity,
 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import './WeatherDetails.css';
@@ -14,6 +14,17 @@ function uvLabel(uv) {
   return { label: `${uv} Extreme`, color: '#E879F9' };
 }
 
+function aqiLabel(aqi) {
+  if (aqi == null) return { label: '—', color: 'var(--text-muted)' };
+  if (aqi <= 50)  return { label: `${aqi} Good`,       color: '#4ADE80' };
+  if (aqi <= 100) return { label: `${aqi} Moderate`,   color: '#FACC15' };
+  if (aqi <= 150) return { label: `${aqi} Sensitive`,  color: '#FB923C' };
+  if (aqi <= 200) return { label: `${aqi} Unhealthy`,  color: '#F87171' };
+  if (aqi <= 300) return { label: `${aqi} Very High`,  color: '#C084FC' };
+  return                  { label: `${aqi} Hazardous`, color: '#EF4444' };
+}
+
+
 function windDirLabel(deg) {
   if (deg == null) return '—';
   const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
@@ -23,11 +34,13 @@ function windDirLabel(deg) {
 export function WeatherDetails({ data }) {
   const units = useAppStore((s) => s.units);
   const cu = data.current;
+  const aq = data.airQuality ?? {};
 
   const speedUnit = units === 'imperial' ? 'mph' : 'km/h';
   const distUnit  = units === 'imperial' ? 'mi' : 'km';
   const tempUnit  = units === 'imperial' ? '°F' : '°C';
-  const uv = uvLabel(cu.uvIndex);
+  const uv     = uvLabel(cu.uvIndex);
+  const aqi     = aqiLabel(aq.aqi);
   const windDir = cu.windDirectionLabel ?? windDirLabel(cu.windDirection);
 
   const items = [
@@ -83,7 +96,15 @@ export function WeatherDetails({ data }) {
         : (cu.precipProb != null ? `${cu.precipProb}% chance` : '—'),
       color: '#60A5FA',
     },
-  ].filter((i) => i.value !== '—' || i.label === 'Humidity' || i.label === 'UV Index');
+    aq.aqi != null ? {
+      icon: <Activity size={15} strokeWidth={1.8} />,
+      label: 'Air Quality',
+      value: aqi.label,
+      valueColor: aqi.color,
+      color: '#94A3B8',
+      sub: 'US AQI',
+    } : null,
+  ].filter(Boolean).filter((i) => i.value !== '—' || i.label === 'Humidity' || i.label === 'UV Index');
 
   return (
     <div className="weather-details sidebar-section">

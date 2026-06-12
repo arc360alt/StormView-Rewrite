@@ -42,14 +42,18 @@ export function RadarLayer() {
       opacity: 0,
       tileSize: 256,
       zIndex: 200,
-      keepBuffer: 1,          // minimal tile buffer — reduces wasted requests
+      keepBuffer: 1,
       updateWhenZooming: false,
       attribution: '© Stormcast',
     };
-    r.current.A = L.tileLayer('', opts).addTo(map);
-    r.current.B = L.tileLayer('', opts).addTo(map);
-    r.current.loaded = { A: -1, B: -1 };
-    r.current.fg = 'A';
+    // Don't addTo(map) yet — layers with an empty URL immediately fire tile requests
+    // for every visible tile and then NS_BINDING_ABORTED them all when the real URL
+    // arrives. We addTo(map) on the first real setUrl() call instead.
+    r.current.A = L.tileLayer('', opts);
+    r.current.B = L.tileLayer('', opts);
+    r.current.loaded   = { A: -1, B: -1 };
+    r.current.fg       = 'A';
+    r.current.onMap    = { A: false, B: false };
     return () => {
       ['A', 'B'].forEach((k) => { try { map.removeLayer(r.current[k]); } catch {} });
     };
@@ -63,10 +67,16 @@ export function RadarLayer() {
     const frame = radarFrames[radarCurrentIdx];
     if (!frame) return;
 
+    // Lazily add layers to the map on first real URL — avoids firing tile requests
+    // against an empty URL and immediately getting NS_BINDING_ABORTED for each tile.
+    const ensureOnMap = (key) => {
+      if (!s.onMap[key]) { s[key].addTo(map); s.onMap[key] = true; }
+    };
+
     const colorChanged = s.prevColor !== radarColorScheme;
     if (colorChanged) {
       s.prevColor = radarColorScheme;
-      s.loaded = { A: -1, B: -1 }; // force reload with new color
+      s.loaded = { A: -1, B: -1 };
     }
 
     const fg = s.fg;
@@ -79,6 +89,8 @@ export function RadarLayer() {
 
     // If background already has this frame preloaded, just swap (no extra request)
     if (s.loaded[bg] === radarCurrentIdx && !colorChanged) {
+      ensureOnMap(fg);
+      ensureOnMap(bg);
       fgLayer.setOpacity(0);
       bgLayer.setOpacity(radarOpacity);
       s.fg = bg;
@@ -86,11 +98,13 @@ export function RadarLayer() {
       // Preload next frame into the old foreground (now hidden)
       const next = radarFrames[radarCurrentIdx + 1];
       if (next && s.loaded[fg] !== radarCurrentIdx + 1) {
+        ensureOnMap(fg);
         fgLayer.setUrl(makeUrl(next));
         s.loaded[fg] = radarCurrentIdx + 1;
       }
     } else {
       // Need to load: put current frame on background, swap immediately
+      ensureOnMap(bg);
       bgLayer.setUrl(makeUrl(frame));
       s.loaded[bg] = radarCurrentIdx;
       fgLayer.setOpacity(0);
@@ -100,6 +114,7 @@ export function RadarLayer() {
       // Preload next frame into old foreground
       const next = radarFrames[radarCurrentIdx + 1];
       if (next) {
+        ensureOnMap(fg);
         fgLayer.setUrl(makeUrl(next));
         s.loaded[fg] = radarCurrentIdx + 1;
       }

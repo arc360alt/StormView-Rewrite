@@ -7,7 +7,16 @@ import './HourlyForecast.css';
 export function HourlyForecast({ data }) {
   const units = useAppStore((s) => s.units);
   const tempUnit = units === 'imperial' ? '°' : '°';
-  const hourly = (data.hourly ?? []).slice(0, 24);
+
+  const allHourly = data.hourly ?? [];
+  // Find the most recent hourly slot at or before now — that's the "current" hour
+  const now = Date.now();
+  let startIdx = 0;
+  for (let i = 0; i < allHourly.length; i++) {
+    if (allHourly[i].time.getTime() <= now) startIdx = i;
+    else break;
+  }
+  const hourly = allHourly.slice(startIdx, startIdx + 24);
 
   if (hourly.length === 0) return null;
 

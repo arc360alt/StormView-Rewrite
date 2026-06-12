@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchNWSWeather } from '../services/nws';
 import { fetchOpenMeteoWeather } from '../services/openmeteo';
+import { fetchAirQuality } from '../services/airquality';
 import useAppStore from '../store/useAppStore';
 
 const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
@@ -23,6 +24,12 @@ export function useWeather() {
     setLoading(true);
     setError(null);
 
+    // Start air quality in parallel — never blocks weather if it fails
+    const aqPromise = fetchAirQuality(location.lat, location.lon).catch((err) => {
+      console.error('[StormView] Air quality fetch failed:', err.message || String(err));
+      return null;
+    });
+
     try {
       let result;
       if (weatherAPI === 'nws') {
@@ -30,6 +37,7 @@ export function useWeather() {
       } else {
         result = await fetchOpenMeteoWeather(location.lat, location.lon, units);
       }
+      result.airQuality = await aqPromise;
       setData(result);
     } catch (err) {
       console.error('[useWeather] fetch failed:', err);
@@ -37,6 +45,7 @@ export function useWeather() {
       if (weatherAPI === 'nws') {
         try {
           const fallback = await fetchOpenMeteoWeather(location.lat, location.lon, units);
+          fallback.airQuality = await aqPromise;
           setData({ ...fallback, nwsFallback: true });
           setError('NWS is only available in the US. Showing Open-Meteo data instead.');
         } catch (err2) {

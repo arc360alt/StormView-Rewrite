@@ -5,6 +5,7 @@ import { WeatherSidebar } from './components/WeatherSidebar/WeatherSidebar';
 import { MobileWeatherBtn, WeatherBottomSheet } from './components/WeatherBottomSheet/WeatherBottomSheet';
 import { SettingsSidebar } from './components/SettingsSidebar/SettingsSidebar';
 import { RadarScrubber } from './components/RadarScrubber/RadarScrubber';
+import { ErrorReporter } from './components/ErrorReporter/ErrorReporter';
 import { Spinner } from './components/ui/Spinner';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
@@ -136,6 +137,9 @@ export default function App() {
 
       {/* Settings panel */}
       <SettingsSidebar />
+
+      {/* Runtime error toasts */}
+      <ErrorReporter />
 
       {/* First-launch geo modal */}
       {showGeoModal && (
