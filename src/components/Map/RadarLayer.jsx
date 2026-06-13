@@ -1,145 +1,180 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { getRadarTileUrl } from '../../services/stormcast';
+import { getRadarTileUrl, RADAR_TILE_SIZE, RADAR_ZOOM_OFFSET } from '../../services/stormcast';
 import useAppStore from '../../store/useAppStore';
 
 /**
- * Two-layer ping-pong radar renderer.
+ * Windowed radar renderer — keeps (1 + PRELOAD_AHEAD) frames on the map.
+ * The window slides as the animation advances; evicted frames are removed so
+ * their tile fetches stop. Browser HTTP cache makes replays near-instant.
  *
- * Instead of creating one Leaflet tile layer per radar frame (which fires
- * N×(tiles in viewport) simultaneous requests and tanks performance), we keep
- * exactly TWO tile layers alive:
- *   A — foreground (currently visible)
- *   B — background (preloading the next frame)
- *
- * On each frame advance we:
- *   1. Swap foreground/background (B becomes visible instantly)
- *   2. Start loading the NEXT frame into the old foreground (A)
- *
- * After the first playthrough most tiles are in the browser cache, so
- * subsequent loops are essentially instant.
+ * updateWhenIdle: true prevents tile spam during the flyTo animation.
  */
+
+const PRELOAD_AHEAD  = 4;
+const FRAME_TIMEOUT  = 8_000; // ms — mark frame ready if load event never fires
+
+const TILE_OPTS = {
+  opacity: 0,
+  tileSize: RADAR_TILE_SIZE,
+  zoomOffset: RADAR_ZOOM_OFFSET,
+  zIndex: 200,
+  keepBuffer: 0,
+  updateWhenIdle: true,
+  attribution: '© Stormcast',
+};
+
+function frameKey(frame, cs, tq) {
+  return `${frame.path}:${cs}:${tq}`;
+}
+
+function getOrCreate(frame, cs, tq, cache) {
+  const k = frameKey(frame, cs, tq);
+  if (cache.has(k)) return [k, cache.get(k)];
+  const url = getRadarTileUrl({ host: frame.host, path: frame.path, colorScheme: cs, size: tq });
+  const layer = L.tileLayer(url, { ...TILE_OPTS });
+  cache.set(k, layer);
+  return [k, layer];
+}
+
 export function RadarLayer() {
-  const map = useMap();
-  const radarFrames    = useAppStore((s) => s.radarFrames);
-  const radarCurrentIdx = useAppStore((s) => s.radarCurrentIdx);
-  const radarOpacity   = useAppStore((s) => s.radarOpacity);
-  const radarColorScheme = useAppStore((s) => s.radarColorScheme);
+  const map         = useMap();
+  const frames      = useAppStore((s) => s.radarFrames);
+  const currentIdx  = useAppStore((s) => s.radarCurrentIdx);
+  const cs          = useAppStore((s) => s.radarColorScheme);
+  const tileQuality = useAppStore((s) => s.radarTileQuality);
+  const opacity     = useAppStore((s) => s.radarOpacity);
+  const setProgress = useAppStore((s) => s.setRadarTileProgress);
 
-  // All mutable layer state lives in a single ref so we never trigger re-renders
-  const r = useRef({
-    A: null,           // Leaflet TileLayer
-    B: null,           // Leaflet TileLayer
-    fg: 'A',           // which layer is currently visible ('A' | 'B')
-    loaded: { A: -1, B: -1 }, // which frame index each layer has loaded
-    prevColor: radarColorScheme,
-  });
+  const cache        = useRef(new Map());
+  const readyKeys    = useRef(new Set()); // frames whose tiles arrived for this viewport
+  const watchedKeys  = useRef(new Set()); // frames with an active load-listener+timeout
+  const timeouts     = useRef(new Map()); // k → timeout id
+  const activeKey    = useRef(null);
+  const [viewEpoch, setViewEpoch] = useState(0);
+  const moveTimer    = useRef(null);
 
-  /* ---- Create the two layers on mount ---- */
+  /* ---- Cleanup on unmount ---- */
+  useEffect(() => () => {
+    clearTimeout(moveTimer.current);
+    timeouts.current.forEach(id => clearTimeout(id));
+    cache.current.forEach(l => { try { map.removeLayer(l); } catch {} });
+    cache.current.clear();
+    readyKeys.current.clear();
+    watchedKeys.current.clear();
+    timeouts.current.clear();
+    activeKey.current = null;
+    setProgress(null);
+  }, [map, setProgress]);
+
+  /* ---- Pan/zoom: stop stale requests, reload after settle ---- */
   useEffect(() => {
-    const opts = {
-      opacity: 0,
-      tileSize: 256,
-      zIndex: 200,
-      keepBuffer: 2,
-      updateWhenIdle: false,
-      // Do NOT set updateWhenZooming: false — it suppresses tile loading during
-      // animation, and Leaflet's post-zoom tile-load chain relies on moveend firing
-      // after zoomend. Pure zoom (no pan) sometimes skips moveend, leaving tiles
-      // unfetched for 30+ seconds until an internal timeout fires.
-      attribution: '© Stormcast',
+    const onViewChange = () => {
+      cache.current.forEach((layer, k) => {
+        if (k !== activeKey.current && layer._map) {
+          try { map.removeLayer(layer); } catch {}
+        }
+      });
+      // Viewport changed — tile-ready status is stale
+      readyKeys.current.clear();
+      watchedKeys.current.clear();
+      timeouts.current.forEach(id => clearTimeout(id));
+      timeouts.current.clear();
+      clearTimeout(moveTimer.current);
+      moveTimer.current = setTimeout(() => setViewEpoch(e => e + 1), 500);
     };
-    r.current.A = L.tileLayer('', opts);
-    r.current.B = L.tileLayer('', opts);
-    r.current.loaded   = { A: -1, B: -1 };
-    r.current.fg       = 'A';
-    r.current.onMap    = { A: false, B: false };
-
-    // Hard guarantee: whenever zoom ends, immediately redraw both layers so tiles
-    // are requested at the new zoom level without relying on Leaflet's moveend chain.
-    const onZoomEnd = () => {
-      const s = r.current;
-      // Invalidate the loaded-frame cache so the next frame effect re-issues setUrl
-      s.loaded = { A: -1, B: -1 };
-      if (s.A && s.onMap.A) s.A.redraw();
-      if (s.B && s.onMap.B) s.B.redraw();
-    };
-    map.on('zoomend', onZoomEnd);
-
+    map.on('moveend', onViewChange);
+    map.on('zoomend', onViewChange);
     return () => {
-      map.off('zoomend', onZoomEnd);
-      ['A', 'B'].forEach((k) => { try { map.removeLayer(r.current[k]); } catch {} });
+      map.off('moveend', onViewChange);
+      map.off('zoomend', onViewChange);
+      clearTimeout(moveTimer.current);
     };
   }, [map]);
 
-  /* ---- Core: respond to frame index or color-scheme change ---- */
+  /* ---- Windowed load: current + PRELOAD_AHEAD frames ---- */
   useEffect(() => {
-    const s = r.current;
-    if (!s.A || !s.B || !radarFrames.length) return;
+    if (!frames.length) return;
 
-    const frame = radarFrames[radarCurrentIdx];
-    if (!frame) return;
+    const windowSize = PRELOAD_AHEAD + 1;
 
-    // Lazily add layers to the map on first real URL — avoids firing tile requests
-    // against an empty URL and immediately getting NS_BINDING_ABORTED for each tile.
-    const ensureOnMap = (key) => {
-      if (!s.onMap[key]) { s[key].addTo(map); s.onMap[key] = true; }
+    // Build the wanted key set
+    const wanted = new Set();
+    for (let j = 0; j < windowSize; j++) {
+      wanted.add(frameKey(frames[(currentIdx + j) % frames.length], cs, tileQuality));
+    }
+
+    // Evict stale layers (collect first, then delete to avoid Map mutation during forEach)
+    const stale = [...cache.current.keys()].filter(k => !wanted.has(k));
+    stale.forEach(k => {
+      try { map.removeLayer(cache.current.get(k)); } catch {}
+      cache.current.delete(k);
+      readyKeys.current.delete(k);
+      watchedKeys.current.delete(k);
+      clearTimeout(timeouts.current.get(k));
+      timeouts.current.delete(k);
+    });
+
+    const t0 = Date.now();
+
+    const reportProgress = () => {
+      // Only count keys that are both ready AND still in the current window
+      const loaded = [...readyKeys.current].filter(k => wanted.has(k)).length;
+      if (loaded >= windowSize) {
+        setProgress(null); // all done — hide bar
+      } else {
+        setProgress({ loadedTiles: loaded, totalTiles: windowSize,
+          framesLoaded: loaded, framesTotal: windowSize, startTime: t0 });
+      }
     };
 
-    const colorChanged = s.prevColor !== radarColorScheme;
-    if (colorChanged) {
-      s.prevColor = radarColorScheme;
-      s.loaded = { A: -1, B: -1 };
-    }
+    reportProgress(); // snapshot immediately so bar reflects cached state
 
-    const fg = s.fg;
-    const bg = fg === 'A' ? 'B' : 'A';
-    const fgLayer = s[fg];
-    const bgLayer = s[bg];
+    // Add window frames and watch for load
+    for (let j = 0; j < windowSize; j++) {
+      const frame = frames[(currentIdx + j) % frames.length];
+      const [k, layer] = getOrCreate(frame, cs, tileQuality, cache.current);
 
-    const makeUrl = (f) =>
-      getRadarTileUrl({ host: f.host, path: f.path, colorScheme: radarColorScheme });
+      if (!layer._map) layer.addTo(map);
 
-    // If background already has this frame preloaded, just swap (no extra request)
-    if (s.loaded[bg] === radarCurrentIdx && !colorChanged) {
-      ensureOnMap(fg);
-      ensureOnMap(bg);
-      fgLayer.setOpacity(0);
-      bgLayer.setOpacity(radarOpacity);
-      s.fg = bg;
+      // Only one listener+timeout per frame at a time
+      if (!readyKeys.current.has(k) && !watchedKeys.current.has(k)) {
+        watchedKeys.current.add(k);
 
-      // Preload next frame into the old foreground (now hidden)
-      const next = radarFrames[radarCurrentIdx + 1];
-      if (next && s.loaded[fg] !== radarCurrentIdx + 1) {
-        ensureOnMap(fg);
-        fgLayer.setUrl(makeUrl(next));
-        s.loaded[fg] = radarCurrentIdx + 1;
-      }
-    } else {
-      // Need to load: put current frame on background, swap immediately
-      ensureOnMap(bg);
-      bgLayer.setUrl(makeUrl(frame));
-      s.loaded[bg] = radarCurrentIdx;
-      fgLayer.setOpacity(0);
-      bgLayer.setOpacity(radarOpacity);
-      s.fg = bg;
+        const markReady = () => {
+          clearTimeout(timeouts.current.get(k));
+          timeouts.current.delete(k);
+          watchedKeys.current.delete(k);
+          readyKeys.current.add(k);
+          reportProgress();
+        };
 
-      // Preload next frame into old foreground
-      const next = radarFrames[radarCurrentIdx + 1];
-      if (next) {
-        ensureOnMap(fg);
-        fgLayer.setUrl(makeUrl(next));
-        s.loaded[fg] = radarCurrentIdx + 1;
+        layer.once('load', markReady);
+
+        // Timeout: if load never fires (hung tile), advance anyway
+        const tid = setTimeout(() => {
+          layer.off('load', markReady);
+          markReady();
+        }, FRAME_TIMEOUT);
+        timeouts.current.set(k, tid);
       }
     }
-  }, [map, radarFrames, radarCurrentIdx, radarOpacity, radarColorScheme]);
 
-  /* ---- Opacity-only change (settings slider) ---- */
+    // Show current frame
+    const [k, layer] = getOrCreate(frames[currentIdx], cs, tileQuality, cache.current);
+    if (activeKey.current && activeKey.current !== k) {
+      cache.current.get(activeKey.current)?.setOpacity(0);
+    }
+    layer.setOpacity(useAppStore.getState().radarOpacity);
+    activeKey.current = k;
+
+  }, [map, frames, currentIdx, cs, tileQuality, setProgress, viewEpoch]);
+
+  /* ---- Opacity slider ---- */
   useEffect(() => {
-    const s = r.current;
-    s[s.fg]?.setOpacity(radarOpacity);
-  }, [radarOpacity]);
+    if (activeKey.current) cache.current.get(activeKey.current)?.setOpacity(opacity);
+  }, [opacity]);
 
   return null;
 }

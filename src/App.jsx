@@ -6,6 +6,7 @@ import { MobileWeatherBtn, WeatherBottomSheet } from './components/WeatherBottom
 import { SettingsSidebar } from './components/SettingsSidebar/SettingsSidebar';
 import { RadarScrubber } from './components/RadarScrubber/RadarScrubber';
 import { ErrorReporter } from './components/ErrorReporter/ErrorReporter';
+import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
 import { Spinner } from './components/ui/Spinner';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
@@ -137,6 +138,9 @@ export default function App() {
 
       {/* Settings panel */}
       <SettingsSidebar />
+
+      {/* Radar tile caching progress — top-center */}
+      <RadarLoadingBar />
 
       {/* Runtime error toasts */}
       <ErrorReporter />

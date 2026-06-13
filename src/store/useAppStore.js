@@ -10,7 +10,8 @@ const useAppStore = create(
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
       radarOpacity: 0.75,
-      radarColorScheme: 7,     // 0-8 RainViewer-compatible color schemes
+      radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)
+      radarColorScheme: 7,     // 0-11 LibreWXR color scheme IDs (7 = Rainbow)
       showNowcast: true,
       showSatellite: false,
       showAlertPolygons: false,
@@ -20,6 +21,8 @@ const useAppStore = create(
       // ---- Transient UI state ----
       settingsOpen: false,
       settingsTab: 'location', // 'location' | 'api' | 'display' | 'radar'
+      // { loadedTiles, totalTiles, framesLoaded, framesTotal, startTime }
+      radarTileProgress: null,
 
       // ---- Radar playback state ----
       radarFrames: [],         // [{ time, path, host, type: 'past'|'nowcast' }]
@@ -33,6 +36,7 @@ const useAppStore = create(
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
       setRadarOpacity: (v) => set({ radarOpacity: v }),
+      setRadarTileQuality: (v) => set({ radarTileQuality: v }),
       setRadarColorScheme: (v) => set({ radarColorScheme: v }),
       setShowNowcast: (v) => set({ showNowcast: v }),
       setShowSatellite: (v) => set({ showSatellite: v }),
@@ -43,6 +47,7 @@ const useAppStore = create(
       // ---- Setters: UI ----
       setSettingsOpen: (open) => set({ settingsOpen: open }),
       setSettingsTab: (tab) => set({ settingsTab: tab }),
+      setRadarTileProgress: (p) => set({ radarTileProgress: p }),
 
       // ---- Setters: radar ----
       setRadarFrames: (frames) => set({
@@ -91,6 +96,7 @@ const useAppStore = create(
         units: s.units,
         sidebarPosition: s.sidebarPosition,
         radarOpacity: s.radarOpacity,
+        radarTileQuality: s.radarTileQuality,
         radarColorScheme: s.radarColorScheme,
         showNowcast: s.showNowcast,
         showSatellite: s.showSatellite,
