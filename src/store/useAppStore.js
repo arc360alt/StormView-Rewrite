@@ -23,6 +23,7 @@ const useAppStore = create(
       settingsTab: 'location', // 'location' | 'api' | 'display' | 'radar'
       // { loadedTiles, totalTiles, framesLoaded, framesTotal, startTime }
       radarTileProgress: null,
+      dismissedWhatsNewVersion: null, // persisted — stores the version string user dismissed
 
       // ---- Radar playback state ----
       radarFrames: [],         // [{ time, path, host, type: 'past'|'nowcast' }]
@@ -48,6 +49,7 @@ const useAppStore = create(
       setSettingsOpen: (open) => set({ settingsOpen: open }),
       setSettingsTab: (tab) => set({ settingsTab: tab }),
       setRadarTileProgress: (p) => set({ radarTileProgress: p }),
+      setDismissedWhatsNewVersion: (v) => set({ dismissedWhatsNewVersion: v }),
 
       // ---- Setters: radar ----
       setRadarFrames: (frames) => set({
@@ -103,6 +105,7 @@ const useAppStore = create(
         showAlertPolygons: s.showAlertPolygons,
         mapZoom: s.mapZoom,
         location: s.location,
+        dismissedWhatsNewVersion: s.dismissedWhatsNewVersion,
       }),
     }
   )

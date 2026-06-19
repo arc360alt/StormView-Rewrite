@@ -7,6 +7,7 @@ import { SettingsSidebar } from './components/SettingsSidebar/SettingsSidebar';
 import { RadarScrubber } from './components/RadarScrubber/RadarScrubber';
 import { ErrorReporter } from './components/ErrorReporter/ErrorReporter';
 import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
+import { WhatsNewModal } from './components/WhatsNewModal/WhatsNewModal';
 import { Spinner } from './components/ui/Spinner';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
@@ -144,6 +145,9 @@ export default function App() {
 
       {/* Runtime error toasts */}
       <ErrorReporter />
+
+      {/* What's New modal — shows after location is set, once per version */}
+      <WhatsNewModal />
 
       {/* First-launch geo modal */}
       {showGeoModal && (
