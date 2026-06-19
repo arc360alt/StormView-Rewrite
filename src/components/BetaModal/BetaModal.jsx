@@ -1,4 +1,4 @@
-import { X, Rocket, Bug, ExternalLink, FlaskConical } from 'lucide-react';
+import { X, Rocket, Bug, ExternalLink, FlaskConical, Clock } from 'lucide-react';
 import './BetaModal.css';
 
 export function BetaModal({ onClose }) {
@@ -40,7 +40,7 @@ export function BetaModal({ onClose }) {
         {/* Divider */}
         <div className="bm-divider" />
 
-        {/* Bottom section — beta notice */}
+        {/* Middle section — beta notice */}
         <div className="bm-bottom">
           <div className="bm-bottom-heading">
             <span className="bm-beta-tag">BETA</span>
@@ -61,6 +61,23 @@ export function BetaModal({ onClose }) {
             Report an Issue on GitHub
             <ExternalLink size={12} strokeWidth={2} className="bm-btn-ext" />
           </a>
+        </div>
+
+        {/* Divider */}
+        <div className="bm-divider" />
+
+        {/* Bottom section — legacy version */}
+        <div className="bm-bottom">
+          <div className="bm-bottom-heading">
+            <Clock size={14} strokeWidth={2} className="bm-section-icon" />
+            What happened to the old StormView?
+          </div>
+          <p className="bm-bottom-desc">
+            The original StormView is still around and we do plan to host it separately
+            for anyone who prefers it. That said, it's not our current focus — getting
+            this rewrite stable and feature-complete comes first. We'll share an update
+            when the legacy version is available again, but don't expect it soon.
+          </p>
         </div>
 
       </div>
