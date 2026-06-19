@@ -8,6 +8,7 @@ import { RadarScrubber } from './components/RadarScrubber/RadarScrubber';
 import { ErrorReporter } from './components/ErrorReporter/ErrorReporter';
 import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
 import { WhatsNewModal } from './components/WhatsNewModal/WhatsNewModal';
+import { BetaModal } from './components/BetaModal/BetaModal';
 import { Spinner } from './components/ui/Spinner';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
@@ -55,6 +56,7 @@ export default function App() {
 
   const [showGeoModal, setShowGeoModal] = useState(false);
   const [weatherSheetOpen, setWeatherSheetOpen] = useState(false);
+  const [showBetaModal, setShowBetaModal] = useState(false);
 
   useEffect(() => {
     if (!location) setShowGeoModal(true);
@@ -94,15 +96,13 @@ export default function App() {
 
       {/* Top-right corner: beta chip + settings gear */}
       <div className="app-top-corner">
-        <a
-          href="https://github.com/arc360alt/StormView-Rewrite"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
           className="app-beta-chip"
-          title="StormView is in beta — click to report issues on GitHub"
+          onClick={() => setShowBetaModal(true)}
+          title="StormView is in beta"
         >
           BETA
-        </a>
+        </button>
         <button
           className={`app-settings-btn ${settingsOpen ? 'app-settings-btn--active' : ''}`}
           onClick={() => setSettingsOpen(!settingsOpen)}
@@ -148,6 +148,9 @@ export default function App() {
 
       {/* What's New modal — shows after location is set, once per version */}
       <WhatsNewModal />
+
+      {/* Beta info modal */}
+      {showBetaModal && <BetaModal onClose={() => setShowBetaModal(false)} />}
 
       {/* First-launch geo modal */}
       {showGeoModal && (

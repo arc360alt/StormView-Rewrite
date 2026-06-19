@@ -1,0 +1,195 @@
+/* =============================================
+   Beta info modal
+   ============================================= */
+
+.bm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 580;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: bmFadeIn 0.18s ease both;
+}
+
+.bm-modal {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  animation: bmSlideIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Close button */
+.bm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.bm-close:hover {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
+
+/* ─── Top section ─── */
+.bm-top {
+  padding: 24px 22px 22px;
+  background: linear-gradient(
+    160deg,
+    var(--accent-dim) 0%,
+    transparent 70%
+  );
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bm-top-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.bm-top-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.bm-top-heading {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.bm-top-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ─── Divider ─── */
+.bm-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── Bottom section ─── */
+.bm-bottom {
+  padding: 18px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bm-bottom-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bm-beta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.bm-bottom-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ─── Buttons ─── */
+.bm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s;
+  align-self: flex-start;
+}
+
+.bm-btn--accent {
+  background: var(--accent);
+  color: #fff;
+}
+.bm-btn--accent:hover { opacity: 0.88; }
+
+.bm-btn--ghost {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.bm-btn--ghost:hover { background: var(--surface-active); }
+
+.bm-btn-ext {
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes bmFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bmSlideIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+/* Mobile */
+@media (max-width: 440px) {
+  .bm-modal { border-radius: var(--radius-md); }
+  .bm-top, .bm-bottom { padding-left: 18px; padding-right: 18px; }
+  .bm-top-heading { font-size: 15px; }
+}
