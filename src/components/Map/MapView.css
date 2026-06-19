@@ -4,6 +4,12 @@
   z-index: 0;
 }
 
+/* GPU-accelerated radar pane: each tile-layer container crossfades on the GPU */
+.leaflet-radar-pane > div {
+  will-change: opacity;
+  transition: opacity 180ms linear;
+}
+
 /* Custom location pin */
 .location-pin {
   width: 20px;

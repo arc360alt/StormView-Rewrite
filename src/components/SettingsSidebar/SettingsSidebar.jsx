@@ -11,16 +11,20 @@ const TABS = [
   { id: 'radar',    label: 'Radar' },
 ];
 
-/* RainViewer-compatible color schemes (1-8) */
+/* LibreWXR color scheme IDs — must match the integer passed in the tile URL */
 const COLOR_SCHEMES = [
-  { id: 1, name: 'Titan',     gradient: 'linear-gradient(90deg, #00000000, #0000ff, #00ff00, #ffff00, #ff0000)' },
-  { id: 2, name: 'RainViewer',    gradient: 'linear-gradient(90deg, #00000000, #008000, #00ff00, #ffff00, #ff8000, #ff0000)' },
-  { id: 3, name: 'Purple',   gradient: 'linear-gradient(90deg, #00000000, #6600cc, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000)' },
-  { id: 4, name: 'Nexrad', gradient: 'linear-gradient(90deg, #000, #004000, #008000, #00c000, #ffff00, #ff8000, #ff0000, #cc00cc)' },
-  { id: 5, name: 'Green',  gradient: 'linear-gradient(90deg, #000, #003366, #006699, #0099cc, #66ccff, #ffffff)' },
-  { id: 6, name: 'Default but different',    gradient: 'linear-gradient(90deg, #00000000, #220033, #440066, #8800cc, #ff44ff, #ffaaff)' },
-  { id: 7, name: 'Default', gradient: 'linear-gradient(90deg, #00000000, #003380, #0066cc, #00aaff, #aaddff, #ffffff)' },
-  { id: 8, name: 'Dark Sky',     gradient: 'linear-gradient(90deg, #000, #222, #555, #999, #ccc, #fff)' },
+  { id: 0,  name: 'B&W',             gradient: 'linear-gradient(90deg, #000, #888, #fff)' },
+  { id: 1,  name: 'RainViewer',      gradient: 'linear-gradient(90deg, transparent, #0000ff, #00ff00, #ffff00, #ff8000, #ff0000)' },
+  { id: 2,  name: 'Universal Blue',  gradient: 'linear-gradient(90deg, transparent, #1a1aff, #0066ff, #00ccff, #66ffff, #fff)' },
+  { id: 3,  name: 'TITAN',           gradient: 'linear-gradient(90deg, transparent, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000, #ff00ff)' },
+  { id: 4,  name: 'Weather Channel', gradient: 'linear-gradient(90deg, transparent, #006600, #00cc00, #ffff00, #ff6600, #ff0000, #cc00cc)' },
+  { id: 5,  name: 'Meteored',        gradient: 'linear-gradient(90deg, transparent, #004488, #0088cc, #00cc88, #88cc00, #cc8800, #cc0000)' },
+  { id: 6,  name: 'NEXRAD III',      gradient: 'linear-gradient(90deg, #000, #004400, #008800, #00cc00, #ffff00, #ff8800, #ff0000, #cc00cc)' },
+  { id: 7,  name: 'Rainbow',         gradient: 'linear-gradient(90deg, transparent, #0000ff, #00ffff, #00ff00, #ffff00, #ff8000, #ff0000)' },
+  { id: 8,  name: 'Dark Sky',        gradient: 'linear-gradient(90deg, transparent, #0d1117, #1f3a5c, #2d6a9f, #63b3ed, #fff)' },
+  { id: 9,  name: 'Datameteo',       gradient: 'linear-gradient(90deg, transparent, #320064, #6400c8, #9600ff, #c864ff, #ff96ff)' },
+  { id: 10, name: 'Viper HD',        gradient: 'linear-gradient(90deg, transparent, #00004c, #0000ff, #00ffff, #ffff00, #ff0000)' },
+  { id: 11, name: 'MRMS CREF',       gradient: 'linear-gradient(90deg, #000, #003366, #0066cc, #00cc66, #66ff00, #ffcc00, #ff6600, #ff0000)' },
 ];
 
 function SegControl({ options, value, onChange }) {
@@ -159,6 +163,8 @@ function DisplayTab() {
 function RadarTab() {
   const radarOpacity = useAppStore((s) => s.radarOpacity);
   const setRadarOpacity = useAppStore((s) => s.setRadarOpacity);
+  const radarTileQuality = useAppStore((s) => s.radarTileQuality);
+  const setRadarTileQuality = useAppStore((s) => s.setRadarTileQuality);
   const radarColorScheme = useAppStore((s) => s.radarColorScheme);
   const setRadarColorScheme = useAppStore((s) => s.setRadarColorScheme);
   const showNowcast = useAppStore((s) => s.showNowcast);
@@ -172,6 +178,24 @@ function RadarTab() {
     <>
       <div className="settings-group">
         <div className="settings-group-label">Radar Options</div>
+        <div className="settings-row" style={{ marginBottom: 6 }}>
+          <div>
+            <div className="settings-row-label">Tile Quality</div>
+            <div className="settings-row-sub">
+              {radarTileQuality === 256
+                ? 'Fast — 256 px tiles, loads quicker, blurry at high zoom'
+                : 'Sharp — 512 px tiles, full detail, slower to load'}
+            </div>
+          </div>
+          <SegControl
+            options={[
+              { label: 'Fast', value: 256 },
+              { label: 'Sharp', value: 512 },
+            ]}
+            value={radarTileQuality}
+            onChange={setRadarTileQuality}
+          />
+        </div>
         <SettingsSlider
           label="Radar Opacity"
           value={radarOpacity}

@@ -1,6 +1,10 @@
 /* stormcastapi Radar API — mirrors the RainViewer v2 API structure exactly */
 
-const API_BASE = 'https://stormcastapi.arc360hub.com/public/weather-maps.json';
+const API_BASE    = 'https://stormcastapi.arc360hub.com/public/weather-maps.json';
+// Always derive tile host from the configured API URL.
+// data.host from LibreWXR typically returns localhost or a LAN IP — both are
+// unreachable from the browser, or blocked as HTTP mixed-content on HTTPS.
+const SERVER_BASE = API_BASE.replace('/public/weather-maps.json', '');
 
 /**
  * Fetches available radar frames from the stormcastapi API.
@@ -12,7 +16,7 @@ export async function fetchRadarFrames(signal) {
   if (!res.ok) throw new Error(`stormcastapi API error: ${res.status}`);
   const data = await res.json();
 
-  const host = data.host ?? 'https://stormcastapi.arc360hub.com';
+  const host = SERVER_BASE;
   const frames = [];
 
   if (data.radar?.past) {
@@ -34,11 +38,14 @@ export async function fetchRadarFrames(signal) {
 /**
  * Builds the tile URL for a given radar frame.
  * size: 256 or 512
- * colorScheme: 0-8
+ * colorScheme: 0–11 (or 255 for raw grayscale) — LibreWXR color scheme IDs
  * smooth: 1 (enabled) or 0
  * snow: 1 (show snow colors) or 0
  */
-export function getRadarTileUrl({ host, path, size = 256, colorScheme = 7, smooth = 1, snow = 1 }) {
+export const RADAR_TILE_SIZE   = 512;
+export const RADAR_ZOOM_OFFSET = -1; // requests tiles at z-1, giving 4× fewer tiles per frame
+
+export function getRadarTileUrl({ host, path, size = RADAR_TILE_SIZE, colorScheme = 7, smooth = 1, snow = 1 }) {
   return `${host}${path}/${size}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
 }
 

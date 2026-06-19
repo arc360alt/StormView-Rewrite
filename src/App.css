@@ -32,7 +32,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #f59e0b;
-  text-decoration: none;
+  font-family: inherit;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;

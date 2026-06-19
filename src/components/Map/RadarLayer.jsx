@@ -1,131 +1,207 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { getRadarTileUrl } from '../../services/stormcast';
+import { getRadarTileUrl, RADAR_TILE_SIZE, RADAR_ZOOM_OFFSET } from '../../services/stormcast';
 import useAppStore from '../../store/useAppStore';
 
 /**
- * Two-layer ping-pong radar renderer.
+ * Windowed radar renderer — keeps (1 + PRELOAD_AHEAD) frames on the map at once.
+ * The window slides as the animation advances; evicted frames are removed so their
+ * tile fetches stop. Browser HTTP cache makes replays near-instant.
  *
- * Instead of creating one Leaflet tile layer per radar frame (which fires
- * N×(tiles in viewport) simultaneous requests and tanks performance), we keep
- * exactly TWO tile layers alive:
- *   A — foreground (currently visible)
- *   B — background (preloading the next frame)
- *
- * On each frame advance we:
- *   1. Swap foreground/background (B becomes visible instantly)
- *   2. Start loading the NEXT frame into the old foreground (A)
- *
- * After the first playthrough most tiles are in the browser cache, so
- * subsequent loops are essentially instant.
+ * GPU acceleration:
+ *   - Dedicated 'radar' pane → own compositor layer (will-change: transform)
+ *   - Per-container will-change: opacity → GPU opacity compositing
+ *   - img.decoding = 'async' → PNG decode off main thread
+ *   - CSS opacity transitions in MapView.css → GPU-animated crossfade
  */
+
+const PRELOAD_AHEAD = 4;
+const FRAME_TIMEOUT = 20_000;
+const RADAR_PANE    = 'radar';
+
+const TILE_OPTS = {
+  opacity: 0,
+  tileSize: RADAR_TILE_SIZE,
+  zoomOffset: RADAR_ZOOM_OFFSET,
+  pane: RADAR_PANE,
+  keepBuffer: 0,
+  updateWhenIdle: true,
+  attribution: '© Stormcast',
+};
+
+/* ---- Layer helpers ---- */
+
+function frameKey(frame, cs, tq) {
+  return `${frame.path}:${cs}:${tq}`;
+}
+
+function getOrCreate(frame, cs, tq, cache) {
+  const k = frameKey(frame, cs, tq);
+  if (cache.has(k)) return [k, cache.get(k)];
+  const url = getRadarTileUrl({ host: frame.host, path: frame.path, colorScheme: cs, size: tq });
+  const layer = L.tileLayer(url, { ...TILE_OPTS });
+
+  // Decode tile PNGs off the main thread (avoids render jank when tiles arrive)
+  const origCreateTile = layer.createTile.bind(layer);
+  layer.createTile = function(coords, done) {
+    const img = origCreateTile(coords, done);
+    img.decoding = 'async';
+    return img;
+  };
+
+  cache.set(k, layer);
+  return [k, layer];
+}
+
+/* ---- Component ---- */
+
 export function RadarLayer() {
-  const map = useMap();
-  const radarFrames    = useAppStore((s) => s.radarFrames);
-  const radarCurrentIdx = useAppStore((s) => s.radarCurrentIdx);
-  const radarOpacity   = useAppStore((s) => s.radarOpacity);
-  const radarColorScheme = useAppStore((s) => s.radarColorScheme);
+  const map         = useMap();
+  const frames      = useAppStore((s) => s.radarFrames);
+  const currentIdx  = useAppStore((s) => s.radarCurrentIdx);
+  const cs          = useAppStore((s) => s.radarColorScheme);
+  const tileQuality = useAppStore((s) => s.radarTileQuality);
+  const opacity     = useAppStore((s) => s.radarOpacity);
+  const setProgress = useAppStore((s) => s.setRadarTileProgress);
 
-  // All mutable layer state lives in a single ref so we never trigger re-renders
-  const r = useRef({
-    A: null,           // Leaflet TileLayer
-    B: null,           // Leaflet TileLayer
-    fg: 'A',           // which layer is currently visible ('A' | 'B')
-    loaded: { A: -1, B: -1 }, // which frame index each layer has loaded
-    prevColor: radarColorScheme,
-  });
+  const cache       = useRef(new Map());
+  const readyKeys   = useRef(new Set());
+  const watchedKeys = useRef(new Set());
+  const timeouts    = useRef(new Map());
+  const activeKey   = useRef(null);
+  const [viewEpoch, setViewEpoch] = useState(0);
+  const moveTimer   = useRef(null);
 
-  /* ---- Create the two layers on mount ---- */
+  /* ---- Create dedicated GPU-composited pane (once per map instance) ---- */
   useEffect(() => {
-    const opts = {
-      opacity: 0,
-      tileSize: 256,
-      zIndex: 200,
-      keepBuffer: 1,
-      updateWhenZooming: false,
-      attribution: '© Stormcast',
+    if (!map.getPane(RADAR_PANE)) {
+      const pane = map.createPane(RADAR_PANE);
+      pane.style.zIndex        = 250; // above base tiles (200), below vector overlays (400)
+      pane.style.willChange    = 'transform';
+      pane.style.pointerEvents = 'none';
+    }
+  }, [map]);
+
+  /* ---- Cleanup on unmount ---- */
+  useEffect(() => () => {
+    clearTimeout(moveTimer.current);
+    timeouts.current.forEach(id => clearTimeout(id));
+    cache.current.forEach(l => { try { map.removeLayer(l); } catch {} });
+    cache.current.clear();
+    readyKeys.current.clear();
+    watchedKeys.current.clear();
+    timeouts.current.clear();
+    activeKey.current = null;
+    setProgress(null);
+  }, [map, setProgress]);
+
+  /* ---- Pan/zoom: stop stale requests, reload after settle, re-warm new viewport ---- */
+  useEffect(() => {
+    const onViewChange = () => {
+      cache.current.forEach((layer, k) => {
+        if (k !== activeKey.current && layer._map) {
+          try { map.removeLayer(layer); } catch {}
+        }
+      });
+      readyKeys.current.clear();
+      watchedKeys.current.clear();
+      timeouts.current.forEach(id => clearTimeout(id));
+      timeouts.current.clear();
+      clearTimeout(moveTimer.current);
+      moveTimer.current = setTimeout(() => setViewEpoch(e => e + 1), 500);
     };
-    // Don't addTo(map) yet — layers with an empty URL immediately fire tile requests
-    // for every visible tile and then NS_BINDING_ABORTED them all when the real URL
-    // arrives. We addTo(map) on the first real setUrl() call instead.
-    r.current.A = L.tileLayer('', opts);
-    r.current.B = L.tileLayer('', opts);
-    r.current.loaded   = { A: -1, B: -1 };
-    r.current.fg       = 'A';
-    r.current.onMap    = { A: false, B: false };
+    map.on('moveend', onViewChange);
+    map.on('zoomend', onViewChange);
     return () => {
-      ['A', 'B'].forEach((k) => { try { map.removeLayer(r.current[k]); } catch {} });
+      map.off('moveend', onViewChange);
+      map.off('zoomend', onViewChange);
+      clearTimeout(moveTimer.current);
     };
   }, [map]);
 
-  /* ---- Core: respond to frame index or color-scheme change ---- */
+  /* ---- Windowed load: current frame + PRELOAD_AHEAD next frames ---- */
   useEffect(() => {
-    const s = r.current;
-    if (!s.A || !s.B || !radarFrames.length) return;
+    if (!frames.length) return;
 
-    const frame = radarFrames[radarCurrentIdx];
-    if (!frame) return;
+    const windowSize = PRELOAD_AHEAD + 1;
 
-    // Lazily add layers to the map on first real URL — avoids firing tile requests
-    // against an empty URL and immediately getting NS_BINDING_ABORTED for each tile.
-    const ensureOnMap = (key) => {
-      if (!s.onMap[key]) { s[key].addTo(map); s.onMap[key] = true; }
+    const wanted = new Set();
+    for (let j = 0; j < windowSize; j++) {
+      wanted.add(frameKey(frames[(currentIdx + j) % frames.length], cs, tileQuality));
+    }
+
+    // Evict stale layers (snapshot first to avoid mutating Map during iteration)
+    const stale = [...cache.current.keys()].filter(k => !wanted.has(k));
+    stale.forEach(k => {
+      try { map.removeLayer(cache.current.get(k)); } catch {}
+      cache.current.delete(k);
+      readyKeys.current.delete(k);
+      watchedKeys.current.delete(k);
+      clearTimeout(timeouts.current.get(k));
+      timeouts.current.delete(k);
+    });
+
+    const t0 = Date.now();
+
+    const reportProgress = () => {
+      const loaded = [...readyKeys.current].filter(k => wanted.has(k)).length;
+      if (loaded >= windowSize) {
+        setProgress(null);
+      } else {
+        setProgress({ loadedTiles: loaded, totalTiles: windowSize,
+          framesLoaded: loaded, framesTotal: windowSize, startTime: t0 });
+      }
     };
 
-    const colorChanged = s.prevColor !== radarColorScheme;
-    if (colorChanged) {
-      s.prevColor = radarColorScheme;
-      s.loaded = { A: -1, B: -1 };
-    }
+    reportProgress();
 
-    const fg = s.fg;
-    const bg = fg === 'A' ? 'B' : 'A';
-    const fgLayer = s[fg];
-    const bgLayer = s[bg];
+    for (let j = 0; j < windowSize; j++) {
+      const frame = frames[(currentIdx + j) % frames.length];
+      const [k, layer] = getOrCreate(frame, cs, tileQuality, cache.current);
 
-    const makeUrl = (f) =>
-      getRadarTileUrl({ host: f.host, path: f.path, colorScheme: radarColorScheme });
-
-    // If background already has this frame preloaded, just swap (no extra request)
-    if (s.loaded[bg] === radarCurrentIdx && !colorChanged) {
-      ensureOnMap(fg);
-      ensureOnMap(bg);
-      fgLayer.setOpacity(0);
-      bgLayer.setOpacity(radarOpacity);
-      s.fg = bg;
-
-      // Preload next frame into the old foreground (now hidden)
-      const next = radarFrames[radarCurrentIdx + 1];
-      if (next && s.loaded[fg] !== radarCurrentIdx + 1) {
-        ensureOnMap(fg);
-        fgLayer.setUrl(makeUrl(next));
-        s.loaded[fg] = radarCurrentIdx + 1;
+      if (!layer._map) {
+        layer.addTo(map);
+        const container = layer.getContainer?.();
+        if (container) container.style.willChange = 'opacity';
       }
-    } else {
-      // Need to load: put current frame on background, swap immediately
-      ensureOnMap(bg);
-      bgLayer.setUrl(makeUrl(frame));
-      s.loaded[bg] = radarCurrentIdx;
-      fgLayer.setOpacity(0);
-      bgLayer.setOpacity(radarOpacity);
-      s.fg = bg;
 
-      // Preload next frame into old foreground
-      const next = radarFrames[radarCurrentIdx + 1];
-      if (next) {
-        ensureOnMap(fg);
-        fgLayer.setUrl(makeUrl(next));
-        s.loaded[fg] = radarCurrentIdx + 1;
+      if (!readyKeys.current.has(k) && !watchedKeys.current.has(k)) {
+        watchedKeys.current.add(k);
+
+        const markReady = () => {
+          clearTimeout(timeouts.current.get(k));
+          timeouts.current.delete(k);
+          watchedKeys.current.delete(k);
+          readyKeys.current.add(k);
+          reportProgress();
+        };
+
+        layer.once('load', markReady);
+
+        // Failsafe: if a tile hangs and load never fires, advance anyway
+        const tid = setTimeout(() => {
+          layer.off('load', markReady);
+          markReady();
+        }, FRAME_TIMEOUT);
+        timeouts.current.set(k, tid);
       }
     }
-  }, [map, radarFrames, radarCurrentIdx, radarOpacity, radarColorScheme]);
 
-  /* ---- Opacity-only change (settings slider) ---- */
+    // Show current frame (CSS transition in MapView.css crossfades on GPU)
+    const [k, layer] = getOrCreate(frames[currentIdx], cs, tileQuality, cache.current);
+    if (activeKey.current && activeKey.current !== k) {
+      cache.current.get(activeKey.current)?.setOpacity(0);
+    }
+    layer.setOpacity(useAppStore.getState().radarOpacity);
+    activeKey.current = k;
+
+  }, [map, frames, currentIdx, cs, tileQuality, setProgress, viewEpoch]);
+
+  /* ---- Opacity slider ---- */
   useEffect(() => {
-    const s = r.current;
-    s[s.fg]?.setOpacity(radarOpacity);
-  }, [radarOpacity]);
+    if (activeKey.current) cache.current.get(activeKey.current)?.setOpacity(opacity);
+  }, [opacity]);
 
   return null;
 }

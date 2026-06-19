@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { fetchRadarFrames } from '../services/stormcast';
 import useAppStore from '../store/useAppStore';
 
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes — matches server's LIBREWXR_FETCH_INTERVAL (600s)
 const FRAME_DURATIONS = { 0.5: 600, 1: 400, 2: 200 }; // ms per frame
 
 export function useRadar() {
