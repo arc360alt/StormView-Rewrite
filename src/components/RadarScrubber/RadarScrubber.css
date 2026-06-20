@@ -2,37 +2,15 @@
    RadarScrubber — floating pill at bottom
    ============================================= */
 
+/* Scrubber wrap — layout and pointer-events only; positioning is owned by .app-bottom-stack */
 .scrubber-wrap {
-  position: fixed;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 450;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: calc(100vw - 680px);
-  min-width: 360px;
-  max-width: 900px;
+  width: 100%;
   animation: fadeIn 0.3s ease;
-}
-
-/* Mobile: full-width scrubber, centered */
-.scrubber-wrap--mobile {
-  width: calc(100vw - 24px);
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 12px;
-  min-width: unset;
-  max-width: unset;
-}
-
-/* Adjust pill width when sidebar is on left (desktop only) */
-.scrubber-wrap--sidebar-left {
-  left: calc(var(--sidebar-width) + 24px + 50%);
-  transform: translateX(-50%);
 }
 
 .scrubber-pill {
@@ -273,6 +251,39 @@
   padding: 8px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ---- Narrow-viewport layout (e.g. 150% page zoom on a standard phone) ----
+   At ~250 CSS-px viewport the top row overflows — move the time display to
+   its own full-width row below the controls so text never word-wraps. */
+@media (max-width: 350px) {
+  .scrubber-wrap--mobile .scrubber-pill {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .scrubber-wrap--mobile .scrubber-top {
+    flex-wrap: wrap;
+    /* column-gap tight to fit play + speed + actions; row-gap between rows */
+    gap: 6px 3px;
+  }
+
+  /* Push time display to its own second row, full-width and centered */
+  .scrubber-wrap--mobile .scrubber-time-display {
+    order: 10;
+    flex: 0 0 100%;
+    text-align: center;
+  }
+
+  /* Right-align the actions in the controls row */
+  .scrubber-wrap--mobile .scrubber-actions {
+    margin-left: auto;
+  }
+
+  /* Slightly tighter speed buttons to fit the controls on one line */
+  .scrubber-wrap--mobile .speed-btn {
+    padding: 2px 5px;
+  }
 }
 
 /* ---- Frame type legend ---- */

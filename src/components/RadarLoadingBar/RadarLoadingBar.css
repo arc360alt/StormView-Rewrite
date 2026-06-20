@@ -5,6 +5,7 @@
   transform: translateX(-50%);
   z-index: 100; /* above map (0), below all app controls (400+) */
   pointer-events: none;
+  width: max-content;
   animation: rloadIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 

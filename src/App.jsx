@@ -112,18 +112,18 @@ export default function App() {
         </button>
       </div>
 
-      {/* Radar scrubber — always visible */}
-      <RadarScrubber isMobile={isMobile} />
-
-      {/* Mobile: floating weather button above scrubber */}
-      {isMobile && (
-        <MobileWeatherBtn
-          weatherData={weatherData}
-          loading={weatherLoading}
-          open={weatherSheetOpen}
-          onClick={() => setWeatherSheetOpen((v) => !v)}
-        />
-      )}
+      {/* Bottom stack: weather button (mobile) stacked above radar scrubber */}
+      <div className={`app-bottom-stack${isMobile ? ' app-bottom-stack--mobile' : ''}`}>
+        {isMobile && (
+          <MobileWeatherBtn
+            weatherData={weatherData}
+            loading={weatherLoading}
+            open={weatherSheetOpen}
+            onClick={() => setWeatherSheetOpen((v) => !v)}
+          />
+        )}
+        <RadarScrubber isMobile={isMobile} />
+      </div>
 
       {/* Mobile: sliding bottom sheet */}
       {isMobile && (
