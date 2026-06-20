@@ -17,7 +17,7 @@ import useAppStore from '../../store/useAppStore';
  */
 
 const PRELOAD_AHEAD = 4;
-const FRAME_TIMEOUT = 20_000;
+const FRAME_TIMEOUT = 12_000;
 const RADAR_PANE    = 'radar';
 
 const TILE_OPTS = {
@@ -144,13 +144,17 @@ export function RadarLayer() {
 
     const t0 = Date.now();
 
+    // Use wanted.size as the target so duplicate keys (circular wrap) don't
+    // produce an unreachable completion count.
+    const targetSize = wanted.size;
+
     const reportProgress = () => {
       const loaded = [...readyKeys.current].filter(k => wanted.has(k)).length;
-      if (loaded >= windowSize) {
+      if (loaded >= targetSize) {
         setProgress(null);
       } else {
-        setProgress({ loadedTiles: loaded, totalTiles: windowSize,
-          framesLoaded: loaded, framesTotal: windowSize, startTime: t0 });
+        setProgress({ loadedTiles: loaded, totalTiles: targetSize,
+          framesLoaded: loaded, framesTotal: targetSize, startTime: t0 });
       }
     };
 
@@ -177,14 +181,22 @@ export function RadarLayer() {
           reportProgress();
         };
 
-        layer.once('load', markReady);
-
-        // Failsafe: if a tile hangs and load never fires, advance anyway
-        const tid = setTimeout(() => {
-          layer.off('load', markReady);
+        // If the layer is already on the map and not loading, its `load` event
+        // fired before we got here (during the pan/zoom debounce window).
+        // Mark it ready immediately instead of waiting for an event that won't come.
+        if (layer._map && !layer.isLoading()) {
           markReady();
-        }, FRAME_TIMEOUT);
-        timeouts.current.set(k, tid);
+        } else {
+          layer.once('load', markReady);
+
+          // Failsafe: if a tile hangs and load never fires, advance anyway
+          const tid = setTimeout(() => {
+            layer.off('load', markReady);
+            console.error(`Radar: frame timed out after ${FRAME_TIMEOUT / 1000}s — tiles may not have loaded. Check the radar tile server.`);
+            markReady();
+          }, FRAME_TIMEOUT);
+          timeouts.current.set(k, tid);
+        }
       }
     }
 
