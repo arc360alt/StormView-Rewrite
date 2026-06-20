@@ -1,6 +1,6 @@
 /* stormcastapi Radar API — mirrors the RainViewer v2 API structure exactly */
 
-const API_BASE    = 'https://api.librewxr.net//public/weather-maps.json';
+const API_BASE    = 'https://api.librewxr.net/public/weather-maps.json';
 // Always derive tile host from the configured API URL.
 // data.host from LibreWXR typically returns localhost or a LAN IP — both are
 // unreachable from the browser, or blocked as HTTP mixed-content on HTTPS.
