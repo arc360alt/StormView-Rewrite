@@ -151,3 +151,13 @@
 .mobile-weather-btn--open .mobile-weather-btn-chevron {
   transform: rotate(180deg);
 }
+
+@media (max-width: 600px) {
+  .mobile-weather-btn {
+    padding: 10px 16px 10px 12px;
+    min-height: 44px;
+  }
+  .mobile-weather-btn-temp {
+    font-size: 17px;
+  }
+}

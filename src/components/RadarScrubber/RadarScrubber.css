@@ -305,3 +305,30 @@
   height: 6px;
   border-radius: 50%;
 }
+
+/* ---- Mobile tweaks ---- */
+@media (max-width: 600px) {
+  /* Tighter pill to keep the stack closer to the bottom */
+  .scrubber-wrap--mobile .scrubber-pill {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  /* Hide the legend — saves ~22px and brings the weather button lower */
+  .scrubber-wrap--mobile .scrubber-legend {
+    display: none;
+  }
+
+  /* Bigger touch targets for Now + refresh buttons */
+  .scrubber-wrap--mobile .scrubber-action-btn {
+    padding: 7px 11px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  /* Slightly bigger speed buttons too */
+  .scrubber-wrap--mobile .speed-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}
