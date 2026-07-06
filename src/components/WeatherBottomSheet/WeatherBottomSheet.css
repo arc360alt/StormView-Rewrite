@@ -108,13 +108,9 @@
 }
 
 /* ---- Floating trigger button ---- */
+/* Positioning is handled by the parent .app-bottom-stack in App.css */
 .mobile-weather-btn {
-  position: fixed;
-  /* scrubber pill is ~118px tall at bottom: 12px → top at ~130px; add 12px gap */
-  bottom: 146px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 450;
+  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -132,7 +128,7 @@
   white-space: nowrap;
 }
 .mobile-weather-btn:active {
-  transform: translateX(-50%) scale(0.96);
+  transform: scale(0.96);
 }
 
 .mobile-weather-btn-temp {
@@ -154,4 +150,14 @@
 }
 .mobile-weather-btn--open .mobile-weather-btn-chevron {
   transform: rotate(180deg);
+}
+
+@media (max-width: 600px) {
+  .mobile-weather-btn {
+    padding: 10px 16px 10px 12px;
+    min-height: 44px;
+  }
+  .mobile-weather-btn-temp {
+    font-size: 17px;
+  }
 }

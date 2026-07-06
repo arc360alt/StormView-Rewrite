@@ -4,8 +4,8 @@ import useAppStore from '../../store/useAppStore';
 import './WhatsNewModal.css';
 
 // ─── DEVELOPER: bump version to re-show for all users; set name for this release ─
-export const WHATS_NEW_VERSION = '3.0.0';
-export const WHATS_NEW_NAME    = 'Welcome to the new StormView! (Complete rewrite)';
+export const WHATS_NEW_VERSION = '3.2.0';
+export const WHATS_NEW_NAME    = 'Small fixes and iomprovements';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -13,44 +13,44 @@ const FEATURES = [
     icon: Cpu,
     color: 'var(--accent)',
     bg: 'var(--accent-dim)',
-    title: 'GPU-Accelerated Radar',
-    desc: 'Tiles render in a dedicated GPU compositor layer with smooth crossfades between frames — no more flicker.',
+    title: 'Switch the server',
+    desc: 'The LibreWXR instance has been switched to the one provided by LibreWXR themselfs as I do not have a good enough server to run this yet.',
   },
   {
     icon: Zap,
     color: '#f59e0b',
     bg: 'rgba(245,158,11,0.12)',
-    title: 'Tile Quality Toggle',
-    desc: 'Switch between Fast (256 px) and Sharp (512 px) tiles in Settings → Radar to trade speed for detail.',
+    title: 'UI Fixes',
+    desc: 'The app now works on smaller screens much better now with this new update!',
   },
   {
     icon: BarChart3,
     color: 'var(--accent)',
     bg: 'var(--accent-dim)',
-    title: 'Radar Loading Bar',
-    desc: 'A progress indicator now shows exactly how many radar frames have loaded before you animate.',
+    title: 'Speed Improvements',
+    desc: 'A bunch of changes have been made to the radar to improve its speed.',
   },
-  {
-    icon: AlertTriangle,
-    color: 'var(--warning)',
-    bg: 'var(--warning-dim)',
-    title: 'NWS Warning Polygons',
-    desc: 'Active weather warnings are drawn directly on the map. Click any polygon for full details (US only).',
-  },
-  {
-    icon: Palette,
-    color: '#f472b6',
-    bg: 'rgba(244,114,182,0.12)',
-    title: '12 Radar Color Schemes',
-    desc: 'Choose from Rainbow, NEXRAD III, Weather Channel, Dark Sky, and 8 others in Settings → Radar.',
-  },
-  {
-    icon: Layers,
-    color: 'var(--accent)',
-    bg: 'var(--accent-dim)',
-    title: 'Smarter Tile Loading',
-    desc: 'A windowed renderer keeps only the frames you need in memory, cutting requests and load time.',
-  },
+  // {
+  //  icon: AlertTriangle,
+  //  color: 'var(--warning)',
+  //  bg: 'var(--warning-dim)',
+  //  title: 'NWS Warning Polygons',
+  //  desc: 'Active weather warnings are drawn directly on the map. Click any polygon for full details (US only).',
+  // },
+  //{
+  //  icon: Palette,
+  //  color: '#f472b6',
+  //  bg: 'rgba(244,114,182,0.12)',
+  //  title: '12 Radar Color Schemes',
+  //  desc: 'Choose from Rainbow, NEXRAD III, Weather Channel, Dark Sky, and 8 others in Settings → Radar.',
+  // },
+  //{
+  //  icon: Layers,
+  //  color: 'var(--accent)',
+  //  bg: 'var(--accent-dim)',
+  //  title: 'Smarter Tile Loading',
+  //  desc: 'A windowed renderer keeps only the frames you need in memory, cutting requests and load time.',
+  //},
 ];
 
 export function WhatsNewModal() {
