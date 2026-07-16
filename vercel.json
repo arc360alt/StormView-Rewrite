@@ -3,5 +3,5 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)api'"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)push-server'"
 }
