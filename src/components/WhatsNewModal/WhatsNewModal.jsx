@@ -1,56 +1,35 @@
 import { useState } from 'react';
-import { X, Zap, Layers, BarChart3, Satellite, AlertTriangle, CloudRain, Palette, Cpu } from 'lucide-react';
+import { X, Wind, Layers, BarChart3, Activity } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import './WhatsNewModal.css';
 
 // ─── DEVELOPER: bump version to re-show for all users; set name for this release ─
-export const WHATS_NEW_VERSION = '3.2.0';
-export const WHATS_NEW_NAME    = 'Small fixes and iomprovements';
+export const WHATS_NEW_VERSION = '3.3.0';
+export const WHATS_NEW_NAME    = 'Air Quality';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
   {
-    icon: Cpu,
-    color: 'var(--accent)',
-    bg: 'var(--accent-dim)',
-    title: 'Switch the server',
-    desc: 'The LibreWXR instance has been switched to the one provided by LibreWXR themselfs as I do not have a good enough server to run this yet.',
+    icon: Layers,
+    color: '#22c55e',
+    bg: 'rgba(34,197,94,0.12)',
+    title: 'Air Quality Map Layer',
+    desc: 'Switch between Radar and AQI in Settings → Radar. The AQI mode shows a live color-coded gradient across the map — green for clean air, scaling through yellow, orange, red, and purple as air quality worsens.',
   },
   {
-    icon: Zap,
+    icon: Wind,
     color: '#f59e0b',
     bg: 'rgba(245,158,11,0.12)',
-    title: 'UI Fixes',
-    desc: 'The app now works on smaller screens much better now with this new update!',
+    title: 'Click to Inspect AQI',
+    desc: 'In AQI mode, click anywhere on the map for a precise reading at that exact location — including the US AQI number, category, and a full breakdown of PM2.5, PM10, Ozone, NO₂, SO₂, and CO.',
   },
   {
-    icon: BarChart3,
+    icon: Activity,
     color: 'var(--accent)',
     bg: 'var(--accent-dim)',
-    title: 'Speed Improvements',
-    desc: 'A bunch of changes have been made to the radar to improve its speed.',
+    title: 'AQI in Weather Details',
+    desc: 'The current Air Quality Index for your location now appears in the weather details panel alongside humidity, UV index, wind, and the rest of your conditions.',
   },
-  // {
-  //  icon: AlertTriangle,
-  //  color: 'var(--warning)',
-  //  bg: 'var(--warning-dim)',
-  //  title: 'NWS Warning Polygons',
-  //  desc: 'Active weather warnings are drawn directly on the map. Click any polygon for full details (US only).',
-  // },
-  //{
-  //  icon: Palette,
-  //  color: '#f472b6',
-  //  bg: 'rgba(244,114,182,0.12)',
-  //  title: '12 Radar Color Schemes',
-  //  desc: 'Choose from Rainbow, NEXRAD III, Weather Channel, Dark Sky, and 8 others in Settings → Radar.',
-  // },
-  //{
-  //  icon: Layers,
-  //  color: 'var(--accent)',
-  //  bg: 'var(--accent-dim)',
-  //  title: 'Smarter Tile Loading',
-  //  desc: 'A windowed renderer keeps only the frames you need in memory, cutting requests and load time.',
-  //},
 ];
 
 export function WhatsNewModal() {
