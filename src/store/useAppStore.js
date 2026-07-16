@@ -16,6 +16,7 @@ const useAppStore = create(
       showSatellite: false,
       showAlertPolygons: false,
       mapZoom: 7,
+      mapLayer: 'radar',       // 'radar' | 'aqi'
       location: null,          // { lat, lon, name, state }
 
       // ---- Transient UI state ----
@@ -43,6 +44,7 @@ const useAppStore = create(
       setShowSatellite: (v) => set({ showSatellite: v }),
       setShowAlertPolygons: (v) => set({ showAlertPolygons: v }),
       setMapZoom: (v) => set({ mapZoom: v }),
+      setMapLayer: (v) => set({ mapLayer: v }),
       setLocation: (loc) => set({ location: loc }),
 
       // ---- Setters: UI ----
@@ -104,6 +106,7 @@ const useAppStore = create(
         showSatellite: s.showSatellite,
         showAlertPolygons: s.showAlertPolygons,
         mapZoom: s.mapZoom,
+        mapLayer: s.mapLayer,
         location: s.location,
         dismissedWhatsNewVersion: s.dismissedWhatsNewVersion,
       }),

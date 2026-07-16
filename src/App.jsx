@@ -53,6 +53,7 @@ export default function App() {
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const setSettingsTab  = useAppStore((s) => s.setSettingsTab);
   const setLocation     = useAppStore((s) => s.setLocation);
+  const mapLayer        = useAppStore((s) => s.mapLayer);
 
   const [showGeoModal, setShowGeoModal] = useState(false);
   const [weatherSheetOpen, setWeatherSheetOpen] = useState(false);
@@ -122,7 +123,7 @@ export default function App() {
             onClick={() => setWeatherSheetOpen((v) => !v)}
           />
         )}
-        <RadarScrubber isMobile={isMobile} />
+        {mapLayer === 'radar' && <RadarScrubber isMobile={isMobile} />}
       </div>
 
       {/* Mobile: sliding bottom sheet */}

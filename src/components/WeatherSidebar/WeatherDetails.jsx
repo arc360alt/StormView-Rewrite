@@ -40,7 +40,7 @@ export function WeatherDetails({ data }) {
   const distUnit  = units === 'imperial' ? 'mi' : 'km';
   const tempUnit  = units === 'imperial' ? '°F' : '°C';
   const uv     = uvLabel(cu.uvIndex);
-  const aqi     = aqiLabel(aq.aqi);
+  const aqi    = aqiLabel(aq.us_aqi);
   const windDir = cu.windDirectionLabel ?? windDirLabel(cu.windDirection);
 
   const items = [
@@ -96,7 +96,7 @@ export function WeatherDetails({ data }) {
         : (cu.precipProb != null ? `${cu.precipProb}% chance` : '—'),
       color: '#60A5FA',
     },
-    aq.aqi != null ? {
+    aq.us_aqi != null ? {
       icon: <Activity size={15} strokeWidth={1.8} />,
       label: 'Air Quality',
       value: aqi.label,
