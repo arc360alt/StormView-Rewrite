@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
+import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
 
@@ -9,6 +10,7 @@ const TABS = [
   { id: 'api',      label: 'Weather' },
   { id: 'display',  label: 'Display' },
   { id: 'radar',    label: 'Radar' },
+  { id: 'alerts',   label: 'Alerts' },
 ];
 
 /* LibreWXR color scheme IDs — must match the integer passed in the tile URL */
@@ -292,11 +294,21 @@ function RadarTab() {
   );
 }
 
+function AlertsTab() {
+  return (
+    <div className="settings-group">
+      <div className="settings-group-label">Push Notifications</div>
+      <NotificationSettings />
+    </div>
+  );
+}
+
 const TAB_CONTENT = {
   location: <LocationTab />,
-  api: <APITab />,
-  display: <DisplayTab />,
-  radar: <RadarTab />,
+  api:      <APITab />,
+  display:  <DisplayTab />,
+  radar:    <RadarTab />,
+  alerts:   <AlertsTab />,
 };
 
 export function SettingsSidebar() {
