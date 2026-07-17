@@ -1,12 +1,9 @@
 import { Bell, BellOff, CheckCircle, AlertTriangle, Loader } from 'lucide-react';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
 import useAppStore from '../../store/useAppStore';
 import './NotificationSettings.css';
 
-export function NotificationSettings() {
+export function NotificationSettings({ supported, permission, subscribed, loading, error, subscribe, unsubscribe }) {
   const location = useAppStore((s) => s.location);
-  const { supported, permission, subscribed, loading, error, subscribe, unsubscribe } =
-    usePushNotifications();
 
   const handleEnable = async () => {
     await subscribe();
