@@ -9,8 +9,7 @@ const {
 const NWS_UA    = 'StormView/1.0 (github.com/arc360alt/StormView-Rewrite)';
 const NWS_HDRS  = { 'User-Agent': NWS_UA, Accept: 'application/geo+json' };
 
-// Zone cache: "lat,lon" → { zones: string[], expires: number }
-// NWS zone IDs rarely change, so cache for 24 h to avoid /points lookups on every poll.
+// Zone cache: "lat,lon" → { zones: string[], stateCode: string, expires: number }
 const ZONE_CACHE = new Map();
 
 // AQI threshold to trigger a notification
@@ -48,12 +47,32 @@ function severityEmoji(severity, certainty) {
   return 'ℹ️';
 }
 
-// Resolve lat/lon → NWS forecast + county zone IDs via /points.
-// Zone-based queries are far more reliable than ?point= for coastal/boundary areas.
+// ── Point-in-polygon (ray casting) ───────────────────────────────────────────
+function ptInRing(pt, ring) {
+  let inside = false;
+  const [x, y] = pt;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function pointInGeometry(lat, lon, geometry) {
+  const pt = [lon, lat]; // GeoJSON is [lon, lat]
+  if (geometry.type === 'Polygon') return ptInRing(pt, geometry.coordinates[0]);
+  if (geometry.type === 'MultiPolygon') return geometry.coordinates.some((p) => ptInRing(pt, p[0]));
+  return false;
+}
+
+// Resolve lat/lon → NWS zone IDs + state code via /points.
+// Cached for 24 h since zone assignments don't change.
 async function resolveZones(lat, lon) {
   const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
   const cached = ZONE_CACHE.get(key);
-  if (cached && Date.now() < cached.expires) return cached.zones;
+  if (cached && Date.now() < cached.expires) return cached;
 
   try {
     const res = await fetch(`https://api.weather.gov/points/${key}`, {
@@ -61,10 +80,10 @@ async function resolveZones(lat, lon) {
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
-      console.warn(`[nws] Zone lookup HTTP ${res.status} for ${key} — outside NWS coverage`);
+      console.warn(`[nws] /points HTTP ${res.status} for ${key} — outside NWS coverage`);
       return null;
     }
-    const data = await res.json();
+    const data  = await res.json();
     const p     = data.properties ?? {};
     const zones = [
       p.forecastZone?.split('/').pop(),
@@ -74,9 +93,11 @@ async function resolveZones(lat, lon) {
       console.warn(`[nws] No zones returned for ${key}`);
       return null;
     }
-    console.log(`[nws] Zones for ${key}: ${zones.join(', ')}`);
-    ZONE_CACHE.set(key, { zones, expires: Date.now() + 24 * 60 * 60 * 1000 });
-    return zones;
+    const stateCode = zones[0].slice(0, 2); // 'NDZ014' → 'ND'
+    console.log(`[nws] Zones for ${key}: ${zones.join(', ')} (state: ${stateCode})`);
+    const entry = { zones, stateCode, expires: Date.now() + 24 * 60 * 60 * 1000 };
+    ZONE_CACHE.set(key, entry);
+    return entry;
   } catch (err) {
     console.warn(`[nws] Zone lookup failed for ${key}:`, err.message);
     return null;
@@ -86,46 +107,37 @@ async function resolveZones(lat, lon) {
 async function fetchNwsAlerts(lat, lon) {
   const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
 
-  // ── Step 1: point-based query ─────────────────────────────────────────────
-  // NWS does server-side polygon intersection, so this correctly finds polygon-
-  // based warnings (tornado, SVR) even when the warning isn't tagged with a
-  // specific county UGC code. Zone-based queries miss these.
+  // Resolve zones + state code
+  const zoneInfo = await resolveZones(lat, lon);
+  if (!zoneInfo) return [];
+  const { zones, stateCode } = zoneInfo;
+
+  // Fetch ALL active alerts for the state, then filter locally.
+  // This catches both UGC-tagged alerts (zone match) and polygon-only
+  // warnings like tornado/SVR that may not carry county UGC codes.
   try {
     const res = await fetch(
-      `https://api.weather.gov/alerts/active?point=${key}&limit=20`,
+      `https://api.weather.gov/alerts/active?area=${stateCode}&status=actual&limit=500`,
       { headers: NWS_HDRS, signal: AbortSignal.timeout(10_000) }
     );
-    if (res.ok) {
-      const data = await res.json();
-      return data.features ?? [];
-    }
-    // 400 = point outside NWS coverage (ocean / offshore) → fall through to zone-based
-    if (res.status !== 400 && res.status !== 404) {
-      console.warn(`[nws] Point query HTTP ${res.status} for ${key}`);
-    }
-  } catch (err) {
-    console.warn(`[nws] Point query failed for ${key}:`, err.message);
-  }
-
-  // ── Step 2: zone-based fallback ───────────────────────────────────────────
-  // Used when the point is over water / outside NWS point coverage.
-  const zones = await resolveZones(lat, lon);
-  if (!zones) return [];
-
-  try {
-    const res = await fetch(
-      `https://api.weather.gov/alerts/active?zone=${zones.join(',')}&limit=20`,
-      { headers: NWS_HDRS, signal: AbortSignal.timeout(10_000) }
-    );
-    if (res.status === 404 || res.status === 400) return [];
     if (!res.ok) {
-      console.warn(`[nws] Zone query HTTP ${res.status} for ${key}`);
+      console.warn(`[nws] State alert query HTTP ${res.status} for ${stateCode}`);
       return [];
     }
-    const data = await res.json();
-    return data.features ?? [];
+    const data     = await res.json();
+    const features = data.features ?? [];
+
+    const matched = features.filter((f) => {
+      const ugc = f.properties?.geocode?.UGC ?? [];
+      if (zones.some((z) => ugc.includes(z))) return true;
+      if (f.geometry) return pointInGeometry(lat, lon, f.geometry);
+      return false;
+    });
+
+    console.log(`[nws] ${stateCode} has ${features.length} alert(s); ${matched.length} match ${zones.join(',')}`);
+    return matched;
   } catch (err) {
-    console.warn(`[nws] Zone query failed for ${key}:`, err.message);
+    console.warn(`[nws] State alert query failed for ${stateCode}:`, err.message);
     return [];
   }
 }
