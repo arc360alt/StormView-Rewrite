@@ -84,27 +84,48 @@ async function resolveZones(lat, lon) {
 }
 
 async function fetchNwsAlerts(lat, lon) {
-  const zones = await resolveZones(lat, lon);
+  const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
 
-  // Build URL: prefer zone-based (reliable) over point-based (flaky for coastal cells)
-  const url = zones
-    ? `https://api.weather.gov/alerts/active?zone=${zones.join(',')}&limit=20`
-    : `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}&limit=20`;
+  // ── Step 1: point-based query ─────────────────────────────────────────────
+  // NWS does server-side polygon intersection, so this correctly finds polygon-
+  // based warnings (tornado, SVR) even when the warning isn't tagged with a
+  // specific county UGC code. Zone-based queries miss these.
+  try {
+    const res = await fetch(
+      `https://api.weather.gov/alerts/active?point=${key}&limit=20`,
+      { headers: NWS_HDRS, signal: AbortSignal.timeout(10_000) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return data.features ?? [];
+    }
+    // 400 = point outside NWS coverage (ocean / offshore) → fall through to zone-based
+    if (res.status !== 400 && res.status !== 404) {
+      console.warn(`[nws] Point query HTTP ${res.status} for ${key}`);
+    }
+  } catch (err) {
+    console.warn(`[nws] Point query failed for ${key}:`, err.message);
+  }
+
+  // ── Step 2: zone-based fallback ───────────────────────────────────────────
+  // Used when the point is over water / outside NWS point coverage.
+  const zones = await resolveZones(lat, lon);
+  if (!zones) return [];
 
   try {
-    const res = await fetch(url, {
-      headers: NWS_HDRS,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (res.status === 404 || res.status === 400) return []; // outside NWS coverage
+    const res = await fetch(
+      `https://api.weather.gov/alerts/active?zone=${zones.join(',')}&limit=20`,
+      { headers: NWS_HDRS, signal: AbortSignal.timeout(10_000) }
+    );
+    if (res.status === 404 || res.status === 400) return [];
     if (!res.ok) {
-      console.warn(`[nws] Returned ${res.status} for ${lat.toFixed(4)},${lon.toFixed(4)}`);
+      console.warn(`[nws] Zone query HTTP ${res.status} for ${key}`);
       return [];
     }
     const data = await res.json();
     return data.features ?? [];
   } catch (err) {
-    console.warn(`[nws] Fetch failed for ${lat.toFixed(4)},${lon.toFixed(4)}:`, err.message);
+    console.warn(`[nws] Zone query failed for ${key}:`, err.message);
     return [];
   }
 }
