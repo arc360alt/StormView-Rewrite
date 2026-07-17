@@ -14,6 +14,7 @@ import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
 import { useIsMobile } from './hooks/useIsMobile';
 import { useGeolocation } from './hooks/useGeolocation';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import useAppStore from './store/useAppStore';
 import './App.css';
 
@@ -75,6 +76,7 @@ export default function App() {
   };
 
   const { data: weatherData, loading: weatherLoading, error: weatherError, refetch } = useWeather();
+  const pushNotifications = usePushNotifications();
 
   // Close bottom sheet when switching to desktop
   useEffect(() => {
@@ -139,7 +141,7 @@ export default function App() {
       )}
 
       {/* Settings panel */}
-      <SettingsSidebar />
+      <SettingsSidebar pushNotifications={pushNotifications} />
 
       {/* Radar tile caching progress — top-center */}
       <RadarLoadingBar />

@@ -294,24 +294,23 @@ function RadarTab() {
   );
 }
 
-function AlertsTab() {
+function AlertsTab({ pushNotifications }) {
   return (
     <div className="settings-group">
       <div className="settings-group-label">Push Notifications</div>
-      <NotificationSettings />
+      <NotificationSettings {...pushNotifications} />
     </div>
   );
 }
 
-const TAB_CONTENT = {
+const STATIC_TAB_CONTENT = {
   location: <LocationTab />,
   api:      <APITab />,
   display:  <DisplayTab />,
   radar:    <RadarTab />,
-  alerts:   <AlertsTab />,
 };
 
-export function SettingsSidebar() {
+export function SettingsSidebar({ pushNotifications }) {
   const settingsOpen = useAppStore((s) => s.settingsOpen);
   const settingsTab = useAppStore((s) => s.settingsTab);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
@@ -343,7 +342,9 @@ export function SettingsSidebar() {
         </div>
 
         <div className="settings-body">
-          {TAB_CONTENT[settingsTab] ?? <LocationTab />}
+          {settingsTab === 'alerts'
+            ? <AlertsTab pushNotifications={pushNotifications} />
+            : STATIC_TAB_CONTENT[settingsTab] ?? <LocationTab />}
         </div>
 
         <div className="settings-footer">
