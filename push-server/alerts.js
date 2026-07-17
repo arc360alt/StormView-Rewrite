@@ -118,12 +118,27 @@ async function checkAndSendAlerts() {
   for (const sub of subs) {
     if (!sub.nws_enabled) continue; // user opted out of NWS alerts
 
-    const alerts  = await fetchNwsAlerts(sub.lat, sub.lon);
-    if (alerts.length > 0) {
-      console.log(`[nws] ${alerts.length} active alert(s) for ${sub.location_name || sub.lat}`);
-    }
-    const seenIds = JSON.parse(sub.seen_alert_ids || '[]');
+    const loc    = sub.location_name || `${sub.lat.toFixed(4)},${sub.lon.toFixed(4)}`;
+    const alerts = await fetchNwsAlerts(sub.lat, sub.lon);
+
+    // Prune seen_alert_ids: only keep IDs that are still present in the current
+    // NWS response. This prevents stale IDs from silently suppressing future
+    // notifications — e.g. if a previous server session already saw a warning
+    // that's still active, old seen IDs get cleared once the warning expires and
+    // a new warning is later issued. It also means if the warning is STILL active
+    // and we already notified, we don't re-notify (still-active ID stays in seen).
+    const rawSeen   = JSON.parse(sub.seen_alert_ids || '[]');
+    const activeIds = alerts.map((a) => a.id);
+    const seenIds   = rawSeen.filter((id) => activeIds.includes(id));
     const newAlerts = alerts.filter((a) => !seenIds.includes(a.id));
+
+    if (alerts.length === 0) {
+      console.log(`[nws] No active alerts for ${loc}`);
+    } else if (newAlerts.length === 0) {
+      console.log(`[nws] ${alerts.length} alert(s) for ${loc} — all already notified`);
+    } else {
+      console.log(`[nws] ${newAlerts.length} new / ${alerts.length} total alert(s) for ${loc}`);
+    }
 
     let dead = false;
     for (const alert of newAlerts) {
@@ -137,11 +152,15 @@ async function checkAndSendAlerts() {
         url:   '/',
       });
       if (result === 'expired') { dead = true; break; }
-      if (result) console.log(`[nws] Sent "${p.event}" to …${sub.endpoint.slice(-16)}`);
+      if (result) console.log(`[nws] ✓ Sent "${p.event}" to ${loc}`);
     }
 
-    if (!dead && newAlerts.length > 0) {
-      updateSeenAlerts(sub.endpoint, [...seenIds, ...newAlerts.map((a) => a.id)]);
+    if (!dead) {
+      // Persist: currently-active IDs we've seen + any new ones just notified
+      const updatedSeen = [...new Set([...seenIds, ...newAlerts.map((a) => a.id)])];
+      if (JSON.stringify(updatedSeen.sort()) !== JSON.stringify(rawSeen.slice().sort())) {
+        updateSeenAlerts(sub.endpoint, updatedSeen);
+      }
     }
   }
 }
