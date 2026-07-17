@@ -60,14 +60,21 @@ async function resolveZones(lat, lon) {
       headers: NWS_HDRS,
       signal: AbortSignal.timeout(10_000),
     });
-    if (!res.ok) return null; // outside NWS coverage or API error
+    if (!res.ok) {
+      console.warn(`[nws] Zone lookup HTTP ${res.status} for ${key} — outside NWS coverage`);
+      return null;
+    }
     const data = await res.json();
     const p     = data.properties ?? {};
     const zones = [
       p.forecastZone?.split('/').pop(),
       p.county?.split('/').pop(),
     ].filter(Boolean);
-    if (zones.length === 0) return null;
+    if (zones.length === 0) {
+      console.warn(`[nws] No zones returned for ${key}`);
+      return null;
+    }
+    console.log(`[nws] Zones for ${key}: ${zones.join(', ')}`);
     ZONE_CACHE.set(key, { zones, expires: Date.now() + 24 * 60 * 60 * 1000 });
     return zones;
   } catch (err) {
@@ -109,7 +116,12 @@ async function checkAndSendAlerts() {
   console.log(`[nws] Checking ${subs.length} subscription(s)…`);
 
   for (const sub of subs) {
+    if (!sub.nws_enabled) continue; // user opted out of NWS alerts
+
     const alerts  = await fetchNwsAlerts(sub.lat, sub.lon);
+    if (alerts.length > 0) {
+      console.log(`[nws] ${alerts.length} active alert(s) for ${sub.location_name || sub.lat}`);
+    }
     const seenIds = JSON.parse(sub.seen_alert_ids || '[]');
     const newAlerts = alerts.filter((a) => !seenIds.includes(a.id));
 
@@ -168,6 +180,8 @@ async function checkAqiAlerts() {
   console.log(`[aqi] Checking ${subs.length} subscription(s)…`);
 
   for (const sub of subs) {
+    if (!sub.aqi_enabled) continue; // user opted out of AQI alerts
+
     const aqi = await fetchAqi(sub.lat, sub.lon);
     if (aqi == null) continue;
 

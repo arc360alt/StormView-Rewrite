@@ -2,14 +2,14 @@ import { Bell, BellOff, CheckCircle, AlertTriangle, Loader } from 'lucide-react'
 import useAppStore from '../../store/useAppStore';
 import './NotificationSettings.css';
 
-export function NotificationSettings({ supported, permission, subscribed, loading, error, subscribe, unsubscribe }) {
+export function NotificationSettings({
+  supported, permission, subscribed, loading, error,
+  subscribe, unsubscribe,
+  notifNws, notifAqi, setNotifNws, setNotifAqi,
+}) {
   const location = useAppStore((s) => s.location);
 
-  const handleEnable = async () => {
-    await subscribe();
-  };
-
-  // ── Not supported ────────────────────────────────────────────────────────────
+  // ── Not supported ──────────────────────────────────────────────────────────
   if (!supported) {
     return (
       <div className="notif-unsupported">
@@ -25,7 +25,7 @@ export function NotificationSettings({ supported, permission, subscribed, loadin
     );
   }
 
-  // ── Permission permanently blocked ───────────────────────────────────────────
+  // ── Permission permanently blocked ─────────────────────────────────────────
   if (permission === 'denied') {
     return (
       <div className="notif-unsupported">
@@ -54,7 +54,7 @@ export function NotificationSettings({ supported, permission, subscribed, loadin
           <div className="notif-status-sub">
             {subscribed
               ? `Alerts for ${location?.name ?? 'your location'} will arrive even when the app is closed.`
-              : 'Enable to receive NWS weather alerts for your location.'}
+              : 'Enable to receive weather and air quality alerts for your location.'}
           </div>
         </div>
       </div>
@@ -68,11 +68,11 @@ export function NotificationSettings({ supported, permission, subscribed, loadin
       ) : (
         <button
           className="notif-btn notif-btn--on"
-          onClick={handleEnable}
+          onClick={subscribe}
           disabled={loading || !location}
         >
           {loading ? <Loader size={15} className="notif-spin" /> : <Bell size={15} />}
-          Enable NWS Alert Notifications
+          Enable Alert Notifications
         </button>
       )}
 
@@ -81,6 +81,40 @@ export function NotificationSettings({ supported, permission, subscribed, loadin
       )}
 
       {error && <div className="notif-error">{error}</div>}
+
+      {/* Per-type preferences — only shown when subscribed */}
+      {subscribed && (
+        <div className="notif-prefs">
+          <div className="notif-pref-row">
+            <div>
+              <div className="notif-pref-label">NWS Weather Alerts</div>
+              <div className="notif-pref-sub">Tornado, severe thunderstorm, flood warnings &amp; more</div>
+            </div>
+            <label className="notif-toggle">
+              <input
+                type="checkbox"
+                checked={!!notifNws}
+                onChange={(e) => setNotifNws(e.target.checked)}
+              />
+              <span className="notif-toggle-track" />
+            </label>
+          </div>
+          <div className="notif-pref-row">
+            <div>
+              <div className="notif-pref-label">Air Quality Alerts</div>
+              <div className="notif-pref-sub">Notified when AQI reaches Unhealthy (200+)</div>
+            </div>
+            <label className="notif-toggle">
+              <input
+                type="checkbox"
+                checked={!!notifAqi}
+                onChange={(e) => setNotifAqi(e.target.checked)}
+              />
+              <span className="notif-toggle-track" />
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Info */}
       <div className="notif-info">
@@ -92,7 +126,7 @@ export function NotificationSettings({ supported, permission, subscribed, loadin
           <li>Winter Storm Warnings &amp; Advisories</li>
           <li>All other active NWS alerts for your area</li>
         </ul>
-        <p className="notif-info-note">US coverage only — powered by the National Weather Service. Alerts are checked every 5 minutes.</p>
+        <p className="notif-info-note">US coverage only — powered by the National Weather Service. Alerts are checked every 90 seconds.</p>
       </div>
     </div>
   );
