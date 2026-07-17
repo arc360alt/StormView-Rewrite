@@ -81,8 +81,8 @@
 /* ---- Tabs ---- */
 .settings-tabs {
   display: flex;
-  padding: 10px 14px 0;
-  gap: 4px;
+  padding: 10px 10px 0;
+  gap: 2px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
@@ -91,12 +91,12 @@
 .settings-tabs::-webkit-scrollbar { display: none; }
 
 .settings-tab {
-  padding: 6px 12px;
+  padding: 6px 9px;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
@@ -432,4 +432,42 @@
   font-size: 12px;
   color: var(--danger);
   margin-bottom: 8px;
+}
+
+/* ---- Layer dropdown ---- */
+.settings-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface-hover)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  background-size: 8px 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 28px 7px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+  flex-shrink: 0;
+}
+.settings-select:hover { border-color: var(--accent-glow); }
+.settings-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+/* AQI info callout */
+.settings-aqi-note {
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.55;
 }

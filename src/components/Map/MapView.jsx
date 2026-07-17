@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { RadarLayer } from './RadarLayer';
+import { AqiLayer } from './AqiLayer';
 import { AlertPolygonLayer } from './AlertPolygonLayer';
 import { MapContextMenu } from './MapContextMenu';
 import useAppStore from '../../store/useAppStore';
@@ -115,8 +116,9 @@ function MapController({ location, theme, mapRef, onContextMenu }) {
 
 export function MapView() {
   const location = useAppStore((s) => s.location);
-  const mapZoom = useAppStore((s) => s.mapZoom);
-  const theme = useTheme();
+  const mapZoom  = useAppStore((s) => s.mapZoom);
+  const mapLayer = useAppStore((s) => s.mapLayer);
+  const theme    = useTheme();
 
   const mapRef = useRef(null);
   const [menu, setMenu] = useState(null);
@@ -140,7 +142,7 @@ export function MapView() {
           onContextMenu={setMenu}
         />
         <SatelliteLayer />
-        <RadarLayer />
+        {mapLayer === 'radar' ? <RadarLayer /> : <AqiLayer />}
         <AlertPolygonLayer />
         {location && (
           <Marker

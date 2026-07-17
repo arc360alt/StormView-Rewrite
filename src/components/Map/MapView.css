@@ -175,3 +175,145 @@
   border-top: 1px solid var(--border);
   margin: 0;
 }
+
+/* =============================================
+   AQI canvas gradient overlay
+   ============================================= */
+
+/* Ensure the 128×128 canvas upscales smoothly instead of pixelating */
+.aqi-canvas-overlay {
+  image-rendering: auto;
+  image-rendering: smooth;
+}
+
+/* =============================================
+   AQI click popup
+   ============================================= */
+.aqi-popup-wrap .leaflet-popup-content-wrapper {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.aqi-popup-wrap .leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 260px;
+}
+.aqi-popup-wrap .leaflet-popup-tip-container { display: none; }
+.aqi-popup-wrap .leaflet-popup-close-button {
+  top: 8px !important;
+  right: 10px !important;
+  color: var(--text-secondary) !important;
+  font-size: 18px !important;
+  font-weight: 300 !important;
+  z-index: 1;
+}
+.aqi-popup-wrap .leaflet-popup-close-button:hover {
+  color: var(--text-primary) !important;
+}
+
+.aqi-popup {
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--text-primary);
+  padding: 14px 16px;
+}
+
+.aqi-popup--loading,
+.aqi-popup--empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 18px 20px;
+}
+
+/* Header row: big AQI number + badge */
+.aqi-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 2px solid;
+  border-color: inherit;
+}
+
+.aqi-popup-num {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.aqi-popup-right {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.aqi-popup-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.aqi-popup-scale {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Description */
+.aqi-popup-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+}
+
+/* Pollutant 2-column grid */
+.aqi-popup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.aqi-popup-cell {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  padding: 5px 8px;
+  background: var(--surface-hover);
+  border-radius: var(--radius-xs);
+}
+
+.aqi-popup-cell-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.aqi-popup-cell-val {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+}
+
+.aqi-popup-src {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+  opacity: 0.7;
+}

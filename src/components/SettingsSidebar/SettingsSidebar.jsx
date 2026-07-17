@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
+import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
 
@@ -9,6 +10,7 @@ const TABS = [
   { id: 'api',      label: 'Weather' },
   { id: 'display',  label: 'Display' },
   { id: 'radar',    label: 'Radar' },
+  { id: 'alerts',   label: 'Alerts' },
 ];
 
 /* LibreWXR color scheme IDs — must match the integer passed in the tile URL */
@@ -161,8 +163,10 @@ function DisplayTab() {
 }
 
 function RadarTab() {
-  const radarOpacity = useAppStore((s) => s.radarOpacity);
-  const setRadarOpacity = useAppStore((s) => s.setRadarOpacity);
+  const mapLayer         = useAppStore((s) => s.mapLayer);
+  const setMapLayer      = useAppStore((s) => s.setMapLayer);
+  const radarOpacity     = useAppStore((s) => s.radarOpacity);
+  const setRadarOpacity  = useAppStore((s) => s.setRadarOpacity);
   const radarTileQuality = useAppStore((s) => s.radarTileQuality);
   const setRadarTileQuality = useAppStore((s) => s.setRadarTileQuality);
   const radarColorScheme = useAppStore((s) => s.radarColorScheme);
@@ -176,6 +180,34 @@ function RadarTab() {
 
   return (
     <>
+      {/* ---- Layer selector ---- */}
+      <div className="settings-group">
+        <div className="settings-group-label">Map Layer</div>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">Active Overlay</div>
+            <div className="settings-row-sub">Switch between radar and air quality index</div>
+          </div>
+          <select
+            className="settings-select"
+            value={mapLayer}
+            onChange={(e) => setMapLayer(e.target.value)}
+          >
+            <option value="radar">Radar</option>
+            <option value="aqi">AQI (Air Quality)</option>
+          </select>
+        </div>
+
+        {mapLayer === 'aqi' && (
+          <div className="settings-aqi-note">
+            A color gradient shows air quality across the map — green is clean, yellow/orange/red indicates increasing pollution.
+            Click anywhere for precise AQI values and pollutant breakdown. Data from Open-Meteo (global coverage, no API key required).
+          </div>
+        )}
+      </div>
+
+      {/* ---- Radar-only options ---- */}
+      {mapLayer === 'radar' && <>
       <div className="settings-group">
         <div className="settings-group-label">Radar Options</div>
         <div className="settings-row" style={{ marginBottom: 6 }}>
@@ -257,15 +289,26 @@ function RadarTab() {
           ))}
         </div>
       </div>
+      </>}  {/* end mapLayer === 'radar' */}
     </>
+  );
+}
+
+function AlertsTab() {
+  return (
+    <div className="settings-group">
+      <div className="settings-group-label">Push Notifications</div>
+      <NotificationSettings />
+    </div>
   );
 }
 
 const TAB_CONTENT = {
   location: <LocationTab />,
-  api: <APITab />,
-  display: <DisplayTab />,
-  radar: <RadarTab />,
+  api:      <APITab />,
+  display:  <DisplayTab />,
+  radar:    <RadarTab />,
+  alerts:   <AlertsTab />,
 };
 
 export function SettingsSidebar() {

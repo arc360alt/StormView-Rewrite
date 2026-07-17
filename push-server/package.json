@@ -1,0 +1,22 @@
+{
+  "name": "stormview-push-api",
+  "version": "1.0.0",
+  "description": "StormView push notification backend — NWS alert polling + Web Push delivery",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "generate-keys": "node generate-keys.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "web-push": "^3.6.7"
+  }
+}
