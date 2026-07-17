@@ -6,7 +6,12 @@ const {
   setAqiAlertActive,
 } = require('./db');
 
-const NWS_UA = 'StormView/1.0 (github.com/arc360alt/StormView-Rewrite)';
+const NWS_UA    = 'StormView/1.0 (github.com/arc360alt/StormView-Rewrite)';
+const NWS_HDRS  = { 'User-Agent': NWS_UA, Accept: 'application/geo+json' };
+
+// Zone cache: "lat,lon" → { zones: string[], expires: number }
+// NWS zone IDs rarely change, so cache for 24 h to avoid /points lookups on every poll.
+const ZONE_CACHE = new Map();
 
 // AQI threshold to trigger a notification
 const AQI_WARN_THRESHOLD  = 200; // send notification at or above this
@@ -43,22 +48,56 @@ function severityEmoji(severity, certainty) {
   return 'ℹ️';
 }
 
-async function fetchNwsAlerts(lat, lon) {
-  const url = `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}&limit=20`;
+// Resolve lat/lon → NWS forecast + county zone IDs via /points.
+// Zone-based queries are far more reliable than ?point= for coastal/boundary areas.
+async function resolveZones(lat, lon) {
+  const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+  const cached = ZONE_CACHE.get(key);
+  if (cached && Date.now() < cached.expires) return cached.zones;
+
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': NWS_UA, Accept: 'application/geo+json' },
+    const res = await fetch(`https://api.weather.gov/points/${key}`, {
+      headers: NWS_HDRS,
       signal: AbortSignal.timeout(10_000),
     });
-    if (res.status === 404) return []; // outside NWS coverage
+    if (!res.ok) return null; // outside NWS coverage or API error
+    const data = await res.json();
+    const p     = data.properties ?? {};
+    const zones = [
+      p.forecastZone?.split('/').pop(),
+      p.county?.split('/').pop(),
+    ].filter(Boolean);
+    if (zones.length === 0) return null;
+    ZONE_CACHE.set(key, { zones, expires: Date.now() + 24 * 60 * 60 * 1000 });
+    return zones;
+  } catch (err) {
+    console.warn(`[nws] Zone lookup failed for ${key}:`, err.message);
+    return null;
+  }
+}
+
+async function fetchNwsAlerts(lat, lon) {
+  const zones = await resolveZones(lat, lon);
+
+  // Build URL: prefer zone-based (reliable) over point-based (flaky for coastal cells)
+  const url = zones
+    ? `https://api.weather.gov/alerts/active?zone=${zones.join(',')}&limit=20`
+    : `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}&limit=20`;
+
+  try {
+    const res = await fetch(url, {
+      headers: NWS_HDRS,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.status === 404 || res.status === 400) return []; // outside NWS coverage
     if (!res.ok) {
-      console.warn(`[nws] Returned ${res.status} for ${lat},${lon}`);
+      console.warn(`[nws] Returned ${res.status} for ${lat.toFixed(4)},${lon.toFixed(4)}`);
       return [];
     }
     const data = await res.json();
     return data.features ?? [];
   } catch (err) {
-    console.warn(`[nws] Fetch failed for ${lat},${lon}:`, err.message);
+    console.warn(`[nws] Fetch failed for ${lat.toFixed(4)},${lon.toFixed(4)}:`, err.message);
     return [];
   }
 }

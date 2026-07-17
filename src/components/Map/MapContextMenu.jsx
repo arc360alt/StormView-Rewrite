@@ -29,9 +29,13 @@ export function MapContextMenu({ lat, lon, x, y, onClose, mapRef }) {
     try {
       const loc = await reverseGeocode(lat, lon);
       setLocation(loc);
-      onClose();
     } catch {
+      // Nominatim failed (rate limit, network, etc.) — still commit the location
+      // using coordinates as the name so the weather fetch can proceed.
+      setLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, state: '', country: '' });
+    } finally {
       setLocLoading(false);
+      onClose();
     }
   };
 
