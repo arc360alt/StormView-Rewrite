@@ -29,15 +29,31 @@ function initDB() {
 }
 
 function saveSubscription(subscription, lat, lon, locationName) {
+  // When lat/lon moves by more than ~1 km (0.01°), treat it as a new location:
+  // reset seen_alert_ids so the user is immediately notified about any active
+  // warnings in their new area, and reset aqi_alert_active so a high-AQI area
+  // triggers a fresh alert.
   db.prepare(`
     INSERT INTO subscriptions (endpoint, p256dh, auth, lat, lon, location_name)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(endpoint) DO UPDATE SET
-      p256dh        = excluded.p256dh,
-      auth          = excluded.auth,
-      lat           = excluded.lat,
-      lon           = excluded.lon,
-      location_name = excluded.location_name
+      p256dh           = excluded.p256dh,
+      auth             = excluded.auth,
+      lat              = excluded.lat,
+      lon              = excluded.lon,
+      location_name    = excluded.location_name,
+      seen_alert_ids   = CASE
+        WHEN ABS(subscriptions.lat - excluded.lat) > 0.01
+          OR ABS(subscriptions.lon - excluded.lon) > 0.01
+        THEN '[]'
+        ELSE subscriptions.seen_alert_ids
+      END,
+      aqi_alert_active = CASE
+        WHEN ABS(subscriptions.lat - excluded.lat) > 0.01
+          OR ABS(subscriptions.lon - excluded.lon) > 0.01
+        THEN 0
+        ELSE subscriptions.aqi_alert_active
+      END
   `).run(
     subscription.endpoint,
     subscription.keys.p256dh,
