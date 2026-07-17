@@ -117,7 +117,7 @@ async function fetchNwsAlerts(lat, lon) {
   // warnings like tornado/SVR that may not carry county UGC codes.
   try {
     const res = await fetch(
-      `https://api.weather.gov/alerts/active?area=${stateCode}&status=actual&limit=500`,
+      `https://api.weather.gov/alerts/active?area=${stateCode}&status=actual`,
       { headers: NWS_HDRS, signal: AbortSignal.timeout(10_000) }
     );
     if (!res.ok) {
