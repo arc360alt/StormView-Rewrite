@@ -2,8 +2,7 @@ require('dotenv').config();
 const express  = require('express');
 const cors     = require('cors');
 const webpush  = require('web-push');
-const cron     = require('node-cron');
-const { initDB, saveSubscription, removeSubscription } = require('./db');
+const { initDB, saveSubscription, updatePreferences, removeSubscription } = require('./db');
 const { checkAndSendAlerts, checkAqiAlerts } = require('./alerts');
 
 // ── Validate required env vars ────────────────────────────────────────────────
@@ -24,7 +23,6 @@ initDB();
 
 const app = express();
 
-// Allow requests from the frontend origin (and localhost in dev)
 const allowedOrigins = process.env.FRONTEND_ORIGIN
   ? [process.env.FRONTEND_ORIGIN, 'http://localhost:5173', 'http://localhost:4173']
   : '*';
@@ -35,12 +33,11 @@ app.use(express.json());
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-// Frontend fetches this to get the public key for push subscription setup
 app.get('/vapid-public-key', (_req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 
-// Called when a user enables notifications
+// Register or update a push subscription (also used for location sync)
 app.post('/subscribe', (req, res) => {
   const { subscription, lat, lon, locationName } = req.body;
 
@@ -61,7 +58,20 @@ app.post('/subscribe', (req, res) => {
   }
 });
 
-// Called when a user disables notifications
+// Update which alert types the user wants (NWS and/or AQI)
+app.post('/preferences', (req, res) => {
+  const { endpoint, nwsEnabled, aqiEnabled } = req.body;
+  if (!endpoint) return res.status(400).json({ error: 'endpoint required.' });
+  try {
+    updatePreferences(endpoint, !!nwsEnabled, !!aqiEnabled);
+    console.log(`[prefs] Updated …${endpoint.slice(-16)}: nws=${nwsEnabled} aqi=${aqiEnabled}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[prefs] DB error:', err.message);
+    res.status(500).json({ error: 'Failed to update preferences.' });
+  }
+});
+
 app.post('/unsubscribe', (req, res) => {
   const { endpoint } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint is required.' });
@@ -70,14 +80,17 @@ app.post('/unsubscribe', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── NWS alert polling — every 5 minutes ──────────────────────────────────────
-cron.schedule('*/5 * * * *', () => {
-  checkAndSendAlerts().catch((err) => console.error('[cron] NWS check failed:', err));
-});
+// ── NWS alert polling — every 90 seconds ─────────────────────────────────────
+const NWS_INTERVAL_MS = 90 * 1000;
+setInterval(
+  () => checkAndSendAlerts().catch((err) => console.error('[poll] NWS check failed:', err)),
+  NWS_INTERVAL_MS
+);
 
 // ── AQI alert polling — every 30 minutes (AQI changes slowly) ────────────────
+const cron = require('node-cron');
 cron.schedule('*/30 * * * *', () => {
-  checkAqiAlerts().catch((err) => console.error('[cron] AQI check failed:', err));
+  checkAqiAlerts().catch((err) => console.error('[poll] AQI check failed:', err));
 });
 
 // Run both once at startup
@@ -88,5 +101,5 @@ checkAqiAlerts().catch(console.error);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`StormView Push API listening on port ${PORT}`);
-  console.log(`Polling NWS alerts every 5 minutes.`);
+  console.log(`Polling NWS alerts every 90 seconds, AQI every 30 minutes.`);
 });

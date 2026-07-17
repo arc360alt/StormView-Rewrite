@@ -18,7 +18,11 @@ async function getVapidPublicKey() {
 }
 
 export function usePushNotifications() {
-  const location = useAppStore((s) => s.location);
+  const location    = useAppStore((s) => s.location);
+  const notifNws    = useAppStore((s) => s.notifNws);
+  const notifAqi    = useAppStore((s) => s.notifAqi);
+  const setNotifNws = useAppStore((s) => s.setNotifNws);
+  const setNotifAqi = useAppStore((s) => s.setNotifAqi);
 
   const [supported,  setSupported]  = useState(false);
   const [permission, setPermission] = useState('default');
@@ -26,7 +30,7 @@ export function usePushNotifications() {
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
 
-  // Detect support and check existing subscription
+  // Detect support and check existing subscription on mount
   useEffect(() => {
     const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     setSupported(ok);
@@ -38,11 +42,9 @@ export function usePushNotifications() {
     });
   }, []);
 
+  // ── Location sync ──────────────────────────────────────────────────────────
   const lastSynced = useRef(null);
 
-  // Auto-sync location to server whenever it changes and the user is subscribed.
-  // Fires immediately; skips the POST if lat/lon/name haven't changed to avoid
-  // unnecessary calls when the same location object is re-set.
   useEffect(() => {
     if (!subscribed || !location) return;
 
@@ -73,7 +75,35 @@ export function usePushNotifications() {
       .catch((err) => console.warn('[notifications] Location sync failed:', err.message));
   }, [location, subscribed]);
 
-  // Subscribe: request permission → create push subscription → register with server
+  // ── Preference sync ────────────────────────────────────────────────────────
+  // Fires immediately when either preference changes (if subscribed).
+  const lastPrefs = useRef(null);
+
+  useEffect(() => {
+    if (!subscribed) return;
+
+    const prev = lastPrefs.current;
+    if (prev && prev.nws === notifNws && prev.aqi === notifAqi) return;
+    lastPrefs.current = { nws: notifNws, aqi: notifAqi };
+
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => {
+        if (!sub) return;
+        return fetch(`${API}/preferences`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            endpoint:   sub.endpoint,
+            nwsEnabled: notifNws,
+            aqiEnabled: notifAqi,
+          }),
+        });
+      })
+      .catch((err) => console.warn('[notifications] Preference sync failed:', err.message));
+  }, [notifNws, notifAqi, subscribed]);
+
+  // ── Subscribe ──────────────────────────────────────────────────────────────
   const subscribe = useCallback(async () => {
     if (!location) return false;
     setLoading(true);
@@ -107,6 +137,18 @@ export function usePushNotifications() {
       if (!res.ok) throw new Error('Notification server rejected the subscription.');
 
       setSubscribed(true);
+
+      // Sync stored preferences immediately after subscribing (in case they differ from server defaults)
+      await fetch(`${API}/preferences`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          endpoint:   subscription.endpoint,
+          nwsEnabled: notifNws,
+          aqiEnabled: notifAqi,
+        }),
+      }).catch(() => {});
+
       return true;
     } catch (err) {
       setError(err.message ?? 'Failed to enable notifications.');
@@ -114,9 +156,9 @@ export function usePushNotifications() {
     } finally {
       setLoading(false);
     }
-  }, [location]);
+  }, [location, notifNws, notifAqi]);
 
-  // Unsubscribe: remove from browser + tell server
+  // ── Unsubscribe ────────────────────────────────────────────────────────────
   const unsubscribe = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -139,5 +181,9 @@ export function usePushNotifications() {
     }
   }, []);
 
-  return { supported, permission, subscribed, loading, error, subscribe, unsubscribe };
+  return {
+    supported, permission, subscribed, loading, error,
+    subscribe, unsubscribe,
+    notifNws, notifAqi, setNotifNws, setNotifAqi,
+  };
 }

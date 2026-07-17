@@ -18,6 +18,8 @@ const useAppStore = create(
       mapZoom: 7,
       mapLayer: 'radar',       // 'radar' | 'aqi'
       location: null,          // { lat, lon, name, state }
+      notifNws: true,          // receive NWS weather alert notifications
+      notifAqi: true,          // receive AQI unhealthy notifications
 
       // ---- Transient UI state ----
       settingsOpen: false,
@@ -46,6 +48,8 @@ const useAppStore = create(
       setMapZoom: (v) => set({ mapZoom: v }),
       setMapLayer: (v) => set({ mapLayer: v }),
       setLocation: (loc) => set({ location: loc }),
+      setNotifNws: (v) => set({ notifNws: v }),
+      setNotifAqi: (v) => set({ notifAqi: v }),
 
       // ---- Setters: UI ----
       setSettingsOpen: (open) => set({ settingsOpen: open }),
@@ -108,6 +112,8 @@ const useAppStore = create(
         mapZoom: s.mapZoom,
         mapLayer: s.mapLayer,
         location: s.location,
+        notifNws: s.notifNws,
+        notifAqi: s.notifAqi,
         dismissedWhatsNewVersion: s.dismissedWhatsNewVersion,
       }),
     }
