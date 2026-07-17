@@ -38,35 +38,39 @@ export function usePushNotifications() {
     });
   }, []);
 
-  const syncTimer = useRef(null);
+  const lastSynced = useRef(null);
 
   // Auto-sync location to server whenever it changes and the user is subscribed.
-  // Debounced 2 s so rapid location changes (e.g. spam right-clicking the map)
-  // only produce one server call for the final settled position.
+  // Fires immediately; skips the POST if lat/lon/name haven't changed to avoid
+  // unnecessary calls when the same location object is re-set.
   useEffect(() => {
     if (!subscribed || !location) return;
 
-    clearTimeout(syncTimer.current);
-    syncTimer.current = setTimeout(() => {
-      navigator.serviceWorker.ready
-        .then((reg) => reg.pushManager.getSubscription())
-        .then((sub) => {
-          if (!sub) return;
-          return fetch(`${API}/subscribe`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-              subscription: sub,
-              lat:          location.lat,
-              lon:          location.lon,
-              locationName: location.name,
-            }),
-          });
-        })
-        .catch((err) => console.warn('[notifications] Location sync failed:', err.message));
-    }, 2000);
+    const prev = lastSynced.current;
+    const unchanged = prev &&
+      Math.abs(prev.lat - location.lat) < 0.001 &&
+      Math.abs(prev.lon - location.lon) < 0.001 &&
+      prev.name === location.name;
+    if (unchanged) return;
 
-    return () => clearTimeout(syncTimer.current);
+    lastSynced.current = location;
+
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => {
+        if (!sub) return;
+        return fetch(`${API}/subscribe`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            subscription: sub,
+            lat:          location.lat,
+            lon:          location.lon,
+            locationName: location.name,
+          }),
+        });
+      })
+      .catch((err) => console.warn('[notifications] Location sync failed:', err.message));
   }, [location, subscribed]);
 
   // Subscribe: request permission → create push subscription → register with server
