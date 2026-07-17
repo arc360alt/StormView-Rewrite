@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import useAppStore from '../store/useAppStore';
 
 const API = import.meta.env.VITE_PUSH_API_URL ?? '';
@@ -38,28 +38,35 @@ export function usePushNotifications() {
     });
   }, []);
 
+  const syncTimer = useRef(null);
+
   // Auto-sync location to server whenever it changes and the user is subscribed.
-  // Uses the same /subscribe upsert endpoint so only lat/lon/name are updated —
-  // the push keys stay untouched.
+  // Debounced 2 s so rapid location changes (e.g. spam right-clicking the map)
+  // only produce one server call for the final settled position.
   useEffect(() => {
     if (!subscribed || !location) return;
 
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
-        if (!sub) return;
-        return fetch(`${API}/subscribe`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            subscription: sub,
-            lat:          location.lat,
-            lon:          location.lon,
-            locationName: location.name,
-          }),
-        });
-      })
-      .catch((err) => console.warn('[notifications] Location sync failed:', err.message));
+    clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.pushManager.getSubscription())
+        .then((sub) => {
+          if (!sub) return;
+          return fetch(`${API}/subscribe`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+              subscription: sub,
+              lat:          location.lat,
+              lon:          location.lon,
+              locationName: location.name,
+            }),
+          });
+        })
+        .catch((err) => console.warn('[notifications] Location sync failed:', err.message));
+    }, 2000);
+
+    return () => clearTimeout(syncTimer.current);
   }, [location, subscribed]);
 
   // Subscribe: request permission → create push subscription → register with server
