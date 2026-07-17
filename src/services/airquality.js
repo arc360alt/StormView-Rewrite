@@ -16,6 +16,28 @@ export async function fetchAirQuality(lat, lon) {
   return data.current ?? null;
 }
 
+/**
+ * Batch-fetch US AQI for multiple points in a single request.
+ * Open-Meteo accepts comma-separated latitude/longitude lists.
+ * Returns [{lat, lon, aqi}] in the same order as the input.
+ */
+export async function fetchAirQualityBatch(points) {
+  if (points.length === 0) return [];
+  const lats = points.map((p) => p.lat.toFixed(4)).join(',');
+  const lons  = points.map((p) => p.lon.toFixed(4)).join(',');
+  const res = await fetch(
+    `${BASE}?latitude=${lats}&longitude=${lons}&current=us_aqi&timezone=auto`
+  );
+  if (!res.ok) throw new Error(`Air quality batch API error ${res.status}`);
+  const data = await res.json();
+  const arr = Array.isArray(data) ? data : [data];
+  return arr.map((d, i) => ({
+    lat: points[i].lat,
+    lon: points[i].lon,
+    aqi: d.current?.us_aqi ?? 0,
+  }));
+}
+
 /** US EPA AQI breakpoints — colors follow the official EPA guidance. */
 export const AQI_SCALE = [
   {

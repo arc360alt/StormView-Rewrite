@@ -1,17 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { fetchAirQuality, getAqiCategory } from '../../services/airquality';
+import { fetchAirQuality, fetchAirQualityBatch, getAqiCategory } from '../../services/airquality';
 
 /* ── Grid / cache config ── */
 
-// Steps to snap geographic sample points to. Must all be representable in toFixed(2)
-// so that cache keys are stable across zoom levels.
 const NICE_STEPS = [0.5, 1, 1.5, 2, 3, 4, 5, 8, 10, 15, 20, 30, 45, 90];
-const MAX_FETCH  = 50;         // max new API calls per viewport update
-const CACHE_TTL  = 30 * 60 * 1000; // 30 min
-const UPDATE_MS  = 1000;       // debounce after pan / zoom
-const CANVAS_SZ  = 128;
+const MAX_BATCH  = 400;        // max points per batch request (one HTTP call)
+const CACHE_TTL  = 30 * 60 * 1000;
+const UPDATE_MS  = 1000;
+const CANVAS_SZ  = 256;        // higher res canvas for denser grid
 
 // Module-level cache persists across AqiLayer mount/unmount cycles (e.g. layer toggle).
 // Key: "lat.toFixed(2),lon.toFixed(2)" → { aqi: number, ts: number }
@@ -22,8 +20,8 @@ const IN_FLIGHT  = new Set(); // keys currently being fetched
 
 function getStep(latSpan, lonSpan) {
   const largest = Math.max(latSpan, lonSpan);
-  // Target ~12 cells across the widest dimension for decent smoke-plume resolution
-  const raw = largest / 12;
+  // Target ~25 cells across the widest dimension — denser grid reveals smoke plume shape
+  const raw = largest / 25;
   return NICE_STEPS.find((s) => s >= raw) ?? 90;
 }
 
@@ -99,7 +97,7 @@ function aqiToRgb(aqi) {
   return COLOR_RAMP[COLOR_RAMP.length - 1].rgb;
 }
 
-function idwAqi(lat, lon, pts, power = 2) {
+function idwAqi(lat, lon, pts, power = 1.5) {
   let wSum = 0, vSum = 0;
   for (const pt of pts) {
     const d2 = (lat - pt.lat) ** 2 + (lon - pt.lon) ** 2;
@@ -111,7 +109,29 @@ function idwAqi(lat, lon, pts, power = 2) {
   return wSum > 0 ? vSum / wSum : 0;
 }
 
-function renderCanvas(bounds, pts) {
+// Bilinear interpolation on the regular grid — no bullseye artifacts.
+// Falls back to IDW if any of the 4 corners are missing (viewport edges).
+function bilinearAqi(lat, lon, step, ptMap, pts) {
+  const latFloor = Math.round(Math.floor(lat / step) * step * 1e6) / 1e6;
+  const lonFloor = Math.round(Math.floor(lon / step) * step * 1e6) / 1e6;
+  const latCeil  = Math.round((latFloor + step) * 1e6) / 1e6;
+  const lonCeil  = Math.round((lonFloor + step) * 1e6) / 1e6;
+
+  const bl = ptMap.get(`${latFloor.toFixed(2)},${lonFloor.toFixed(2)}`);
+  const br = ptMap.get(`${latFloor.toFixed(2)},${lonCeil.toFixed(2)}`);
+  const tl = ptMap.get(`${latCeil.toFixed(2)},${lonFloor.toFixed(2)}`);
+  const tr = ptMap.get(`${latCeil.toFixed(2)},${lonCeil.toFixed(2)}`);
+
+  if (bl != null && br != null && tl != null && tr != null) {
+    const tx = (lon - lonFloor) / step;
+    const ty = (lat - latFloor) / step;
+    return bl * (1 - tx) * (1 - ty) + br * tx * (1 - ty) + tl * (1 - tx) * ty + tr * tx * ty;
+  }
+
+  return idwAqi(lat, lon, pts);
+}
+
+function renderCanvas(bounds, pts, step) {
   const sz = CANVAS_SZ;
   const canvas = document.createElement('canvas');
   canvas.width = sz; canvas.height = sz;
@@ -121,11 +141,19 @@ function renderCanvas(bounds, pts) {
   const latSpan = bounds.getNorth() - bounds.getSouth();
   const lonSpan = bounds.getEast()  - bounds.getWest();
 
+  // Build O(1) lookup for bilinear corner lookups
+  const ptMap = new Map();
+  for (const pt of pts) {
+    ptMap.set(`${pt.lat.toFixed(2)},${pt.lon.toFixed(2)}`, pt.aqi);
+  }
+
   for (let row = 0; row < sz; row++) {
     const lat = bounds.getNorth() - (row / sz) * latSpan;
     for (let col = 0; col < sz; col++) {
       const lon = bounds.getWest() + (col / sz) * lonSpan;
-      const aqi = idwAqi(lat, lon, pts);
+      const aqi = step
+        ? bilinearAqi(lat, lon, step, ptMap, pts)
+        : idwAqi(lat, lon, pts);
       const [r, g, b] = aqiToRgb(aqi);
       const i = (row * sz + col) * 4;
       img.data[i]     = r;
@@ -177,10 +205,11 @@ export function AqiLayer() {
   const popupRef   = useRef(null);
   const timerRef   = useRef(null);
   const fetchId    = useRef(0);
+  const stepRef    = useRef(null); // current grid step, for bilinear interpolation
 
   const pushOverlay = useCallback((bounds, pts) => {
     if (pts.length < 2) return;
-    const dataUrl = renderCanvas(bounds, pts);
+    const dataUrl = renderCanvas(bounds, pts, stepRef.current);
     if (overlayRef.current) {
       try { map.removeLayer(overlayRef.current); } catch {}
     }
@@ -198,7 +227,8 @@ export function AqiLayer() {
     const latSpan = bounds.getNorth() - bounds.getSouth();
     const lonSpan = bounds.getEast()  - bounds.getWest();
     const step    = getStep(latSpan, lonSpan);
-    const pad     = step * 2; // IDW uses 2 rings of neighbours outside the viewport
+    stepRef.current = step;
+    const pad     = step * 2;
 
     // Immediately render whatever is already cached for this viewport
     const cached = cachedNear(bounds, pad);
@@ -220,24 +250,23 @@ export function AqiLayer() {
         const db = (b.lat - center.lat) ** 2 + (b.lon - center.lng) ** 2;
         return da - db;
       })
-      .slice(0, MAX_FETCH);
+      .slice(0, MAX_BATCH);
 
     if (toFetch.length === 0) return;
 
     for (const p of toFetch) IN_FLIGHT.add(cacheKey(p.lat, p.lon));
 
-    await Promise.allSettled(
-      toFetch.map(async (p) => {
-        const k = cacheKey(p.lat, p.lon);
-        try {
-          const d = await fetchAirQuality(p.lat, p.lon);
-          const aqi = d?.us_aqi ?? 0;
-          if (aqi > 0) GEO_CACHE.set(k, { aqi, ts: Date.now() });
-        } finally {
-          IN_FLIGHT.delete(k);
-        }
-      })
-    );
+    try {
+      const results = await fetchAirQualityBatch(toFetch);
+      const now = Date.now();
+      for (const { lat, lon, aqi } of results) {
+        const k = cacheKey(lat, lon);
+        if (aqi > 0) GEO_CACHE.set(k, { aqi, ts: now });
+        IN_FLIGHT.delete(k);
+      }
+    } catch {
+      for (const p of toFetch) IN_FLIGHT.delete(cacheKey(p.lat, p.lon));
+    }
 
     if (id !== fetchId.current) return; // viewport changed while we were fetching
 
