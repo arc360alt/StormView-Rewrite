@@ -1,0 +1,65 @@
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  height: 38px;
+  flex-shrink: 0;
+  border-bottom: 1px solid;
+  user-select: none;
+}
+
+.alert-banner-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.alert-banner-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.alert-banner-arrow {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.alert-banner-arrow:hover { opacity: 1; }
+
+.alert-banner-counter {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 0 2px;
+  opacity: 0.7;
+  min-width: 28px;
+  text-align: center;
+}
+
+.alert-banner-btn {
+  background: none;
+  border: 1px solid;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.alert-banner-btn:hover { opacity: 1; }

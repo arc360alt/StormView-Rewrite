@@ -1,10 +1,13 @@
 import { MapPin, RefreshCw } from 'lucide-react';
 import { WeatherContent } from './WeatherContent';
+import { AlertBanner } from './AlertBanner';
 import { Spinner } from '../ui/Spinner';
+import { useNwsAlerts } from '../../hooks/useNwsAlerts';
 import useAppStore from '../../store/useAppStore';
 import './WeatherSidebar.css';
 
 export function WeatherSidebar({ weatherData, loading, error, onRefresh }) {
+  const alerts  = useNwsAlerts();
   const location = useAppStore((s) => s.location);
   const sidebarPosition = useAppStore((s) => s.sidebarPosition);
   const weatherAPI = useAppStore((s) => s.weatherAPI);
@@ -64,6 +67,9 @@ export function WeatherSidebar({ weatherData, loading, error, onRefresh }) {
             </div>
           )}
         </div>
+
+        {/* Alert banner — shown when active NWS alerts exist for this location */}
+        <AlertBanner alerts={alerts} />
 
         {/* Body */}
         <div className="sidebar-body">

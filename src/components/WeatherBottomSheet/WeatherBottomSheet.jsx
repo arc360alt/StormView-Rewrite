@@ -1,8 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { MapPin, ChevronUp, RefreshCw } from 'lucide-react';
 import { WeatherContent } from '../WeatherSidebar/WeatherContent';
+import { AlertBanner } from '../WeatherSidebar/AlertBanner';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { Spinner } from '../ui/Spinner';
+import { useNwsAlerts } from '../../hooks/useNwsAlerts';
 import useAppStore from '../../store/useAppStore';
 import './WeatherBottomSheet.css';
 
@@ -45,7 +47,8 @@ export function MobileWeatherBtn({ weatherData, loading, open, onClick }) {
 
 /** The sliding bottom sheet */
 export function WeatherBottomSheet({ weatherData, loading, error, onRefresh, open, onClose }) {
-  const location   = useAppStore((s) => s.location);
+  const alerts  = useNwsAlerts();
+  const location = useAppStore((s) => s.location);
   const weatherAPI = useAppStore((s) => s.weatherAPI);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const setSettingsTab  = useAppStore((s) => s.setSettingsTab);
@@ -183,6 +186,9 @@ export function WeatherBottomSheet({ weatherData, loading, error, onRefresh, ope
             </button>
           </div>
         </div>
+
+        {/* Alert banner */}
+        <AlertBanner alerts={alerts} />
 
         {/* Scrollable body */}
         <div className="bottom-sheet-body">
