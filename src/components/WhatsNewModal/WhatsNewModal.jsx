@@ -4,8 +4,8 @@ import useAppStore from '../../store/useAppStore';
 import './WhatsNewModal.css';
 
 // ─── DEVELOPER: bump version to re-show for all users; set name for this release ─
-export const WHATS_NEW_VERSION = '3.3.0';
-export const WHATS_NEW_NAME    = 'Air Quality';
+export const WHATS_NEW_VERSION = '3.4.0';
+export const WHATS_NEW_NAME    = 'NWS Warnings & Other stuff';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -13,22 +13,22 @@ const FEATURES = [
     icon: Layers,
     color: '#22c55e',
     bg: 'rgba(34,197,94,0.12)',
-    title: 'Air Quality Map Layer',
-    desc: 'Switch between Radar and AQI in Settings → Radar. The AQI mode shows a live color-coded gradient across the map — green for clean air, scaling through yellow, orange, red, and purple as air quality worsens.',
+    title: 'NWS Warnings in your Weather Details',
+    desc: 'NWS Warnings are now bundled in with your foracst details in the Forcast panel.',
   },
   {
     icon: Wind,
     color: '#f59e0b',
     bg: 'rgba(245,158,11,0.12)',
-    title: 'Click to Inspect AQI',
-    desc: 'In AQI mode, click anywhere on the map for a precise reading at that exact location — including the US AQI number, category, and a full breakdown of PM2.5, PM10, Ozone, NO₂, SO₂, and CO.',
+    title: 'Notification Alert System',
+    desc: 'If you enable our new StormView Alert feature, you will get live updates on your device about any weather alerts or air quality concerns.',
   },
   {
     icon: Activity,
     color: 'var(--accent)',
     bg: 'var(--accent-dim)',
-    title: 'AQI in Weather Details',
-    desc: 'The current Air Quality Index for your location now appears in the weather details panel alongside humidity, UV index, wind, and the rest of your conditions.',
+    title: 'Bug Fixes & Improvements',
+    desc: 'Don\'t need to explain this one really.',
   },
 ];
 
