@@ -102,7 +102,7 @@ export function WeatherDetails({ data }) {
       value: aqi.label,
       valueColor: aqi.color,
       color: '#94A3B8',
-      sub: 'US AQI',
+      sub: '',
     } : null,
   ].filter(Boolean).filter((i) => i.value !== '—' || i.label === 'Humidity' || i.label === 'UV Index');
 
