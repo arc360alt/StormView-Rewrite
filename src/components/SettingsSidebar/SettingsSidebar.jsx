@@ -177,6 +177,8 @@ function RadarTab() {
   const setShowSatellite = useAppStore((s) => s.setShowSatellite);
   const showAlertPolygons = useAppStore((s) => s.showAlertPolygons);
   const setShowAlertPolygons = useAppStore((s) => s.setShowAlertPolygons);
+  const showArrows = useAppStore((s) => s.showArrows);
+  const setShowArrows = useAppStore((s) => s.setShowArrows);
 
   return (
     <>
@@ -258,6 +260,27 @@ function RadarTab() {
             label="NWS Warning Polygons"
           />
         </div>
+        <div className="settings-row">
+          <Toggle
+            checked={showArrows}
+            onChange={setShowArrows}
+            label="Storm Motion Arrows"
+          />
+        </div>
+        {showArrows && (
+          <div style={{
+            padding: '8px 10px',
+            background: 'var(--accent-dim)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-xs)',
+            fontSize: 11,
+            color: 'var(--text-secondary)',
+            lineHeight: 1.5,
+            marginTop: 4,
+          }}>
+            Overlays storm direction arrows from optical flow analysis. Arrow color automatically matches your current theme.
+          </div>
+        )}
         {showAlertPolygons && (
           <div style={{
             padding: '8px 10px',
