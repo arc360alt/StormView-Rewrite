@@ -34,6 +34,20 @@ const EVENT_STYLE = {
   'Excessive Heat Warning':          { fill: '#C71585', stroke: '#8B0E5C', opacity: 0.35 },
   'Extreme Cold Warning':            { fill: '#0000FF', stroke: '#0000CC', opacity: 0.35 },
   'Special Weather Statement':       { fill: '#FFE4B5', stroke: '#CCBB8E', opacity: 0.22 },
+  'Air Quality Alert':               { fill: '#8B8B00', stroke: '#666600', opacity: 0.20 },
+  'Beach Hazard Statement':          { fill: '#40E0D0', stroke: '#28A8A0', opacity: 0.20 },
+  'Rip Current Statement':           { fill: '#008B8B', stroke: '#006666', opacity: 0.22 },
+  'Small Craft Advisory':            { fill: '#D2B48C', stroke: '#A08060', opacity: 0.20 },
+  'Frost Advisory':                  { fill: '#6495ED', stroke: '#4070CC', opacity: 0.20 },
+  'Freeze Warning':                  { fill: '#483D8B', stroke: '#302866', opacity: 0.28 },
+  'Hard Freeze Warning':             { fill: '#9400D3', stroke: '#6A0099', opacity: 0.30 },
+  'Freeze Watch':                    { fill: '#00CED1', stroke: '#009DA0', opacity: 0.20 },
+  'Lake Wind Advisory':              { fill: '#D2691E', stroke: '#A0481A', opacity: 0.18 },
+  'Dust Advisory':                   { fill: '#BDB76B', stroke: '#8A8440', opacity: 0.22 },
+  'Dust Storm Warning':              { fill: '#FFE4C4', stroke: '#CCA88A', opacity: 0.30 },
+  'Smoke Advisory':                  { fill: '#808080', stroke: '#555555', opacity: 0.20 },
+  'Red Flag Warning':                { fill: '#FF1493', stroke: '#CC0060', opacity: 0.30 },
+  'Fire Weather Watch':              { fill: '#FFDEAD', stroke: '#CCA868', opacity: 0.22 },
 };
 
 const SEVERITY_STYLE = {
@@ -50,6 +64,11 @@ function featureStyle(feature) {
   return { fillColor: cfg.fill, color: cfg.stroke, fillOpacity: cfg.opacity, weight: 2, opacity: 0.85 };
 }
 
+function advisoryStyle(feature) {
+  // Same colours but dashed border to signal these are zone-based (approximate boundaries)
+  return { ...featureStyle(feature), dashArray: '5 4', weight: 1.5, opacity: 0.70 };
+}
+
 /* ---- Popup HTML (no React — Leaflet uses innerHTML) ---- */
 const SEV_COLORS = {
   Extreme: '#ef4444', Severe: '#f97316', Moderate: '#f59e0b', Minor: '#3b82f6',
@@ -60,7 +79,6 @@ function buildPopupHTML(p) {
   const severity = p.severity ?? '';
   const expires  = p.expires ? `Until ${format(new Date(p.expires), "EEE, MMM d 'at' h:mm a")}` : '';
   const headline = (p.headline ?? '').replace(/\n/g, ' ').trim();
-  // Strip NWS asterisk bullet markers and normalise whitespace
   const desc     = (p.description ?? '').replace(/\* /g, '\n• ').replace(/\n{3,}/g, '\n\n').trim();
   const instr    = (p.instruction ?? '').trim();
   const sevColor = SEV_COLORS[severity] ?? '#94a3b8';
@@ -84,71 +102,149 @@ function buildPopupHTML(p) {
     </div>`;
 }
 
+/* ---- Zone geometry cache (zones are static admin boundaries — never expire) ---- */
+const ZONE_GEO_CACHE = new Map(); // zoneId → GeoJSON geometry | null
+
+async function fetchZoneGeom(zoneId) {
+  if (ZONE_GEO_CACHE.has(zoneId)) return ZONE_GEO_CACHE.get(zoneId);
+  // UGC ID format: SSZ000 (forecast/fire zone) or SSC000 (county zone)
+  const zoneType = zoneId[2] === 'C' ? 'county' : 'forecast';
+  try {
+    const res = await fetch(
+      `https://api.weather.gov/zones/${zoneType}/${zoneId}`,
+      { headers: HEADERS, signal: AbortSignal.timeout(8_000) }
+    );
+    if (!res.ok) { ZONE_GEO_CACHE.set(zoneId, null); return null; }
+    const data = await res.json();
+    const geo = data.geometry ?? null;
+    ZONE_GEO_CACHE.set(zoneId, geo);
+    return geo;
+  } catch {
+    ZONE_GEO_CACHE.set(zoneId, null);
+    return null;
+  }
+}
+
+// Fetch zone geometries in parallel batches (avoids hammering the NWS API)
+async function resolveZoneGeometries(zoneIds) {
+  const CONCURRENCY = 6;
+  const results = new Map();
+  // Pull already-cached entries immediately
+  const toFetch = zoneIds.filter((id) => {
+    if (ZONE_GEO_CACHE.has(id)) { results.set(id, ZONE_GEO_CACHE.get(id)); return false; }
+    return true;
+  });
+  for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
+    const chunk = toFetch.slice(i, i + CONCURRENCY);
+    const geos  = await Promise.all(chunk.map(fetchZoneGeom));
+    chunk.forEach((id, j) => results.set(id, geos[j]));
+  }
+  return results;
+}
+
+// Expand zone-based alerts into renderable GeoJSON features using NWS zone boundaries
+async function buildAdvisoryFeatures(alerts) {
+  // Map each zone ID to its highest-priority alert (sorted by severity already)
+  const zoneToAlert = new Map();
+  for (const alert of alerts) {
+    for (const zoneId of alert.properties?.geocode?.UGC ?? []) {
+      if (!zoneToAlert.has(zoneId)) zoneToAlert.set(zoneId, alert);
+    }
+  }
+  if (zoneToAlert.size === 0) return [];
+
+  const geoMap = await resolveZoneGeometries([...zoneToAlert.keys()]);
+
+  const features = [];
+  for (const [zoneId, geo] of geoMap) {
+    if (!geo) continue;
+    features.push({
+      type: 'Feature',
+      geometry: geo,
+      properties: zoneToAlert.get(zoneId).properties,
+    });
+  }
+  return features;
+}
+
+/* ---- Shared layer builder ---- */
+function buildGeoLayer(features, map, styleFn) {
+  // `geoLayer` is referenced inside the closure for resetStyle — assigned below
+  let geoLayer;
+  geoLayer = L.geoJSON(
+    { type: 'FeatureCollection', features },
+    {
+      style: styleFn,
+      zIndex: 300,
+      onEachFeature(feature, fLayer) {
+        fLayer.on('mouseover', (e) => {
+          e.target.setStyle({ fillOpacity: 0.6, weight: 3, dashArray: null });
+          e.target.bringToFront();
+        });
+        fLayer.on('mouseout', (e) => { geoLayer.resetStyle(e.target); });
+        fLayer.on('click', (e) => {
+          L.popup({ maxWidth: 340, className: 'nws-popup-wrap', closeButton: true })
+            .setLatLng(e.latlng)
+            .setContent(buildPopupHTML(feature.properties))
+            .openOn(map);
+        });
+      },
+    }
+  ).addTo(map);
+  return geoLayer;
+}
+
 /* ---- Component ---- */
 export function AlertPolygonLayer() {
-  const map              = useMap();
+  const map               = useMap();
   const showAlertPolygons = useAppStore((s) => s.showAlertPolygons);
-  const layerRef         = useRef(null);
+  const showAdvisories    = useAppStore((s) => s.showAdvisories);
+  const warningLayerRef   = useRef(null); // polygon-geometry warnings
+  const advisoryLayerRef  = useRef(null); // zone-boundary advisories
+
+  const removeLayers = () => {
+    [warningLayerRef, advisoryLayerRef].forEach((ref) => {
+      if (ref.current) { try { map.removeLayer(ref.current); } catch {} ref.current = null; }
+    });
+  };
 
   useEffect(() => {
-    /* When disabled: remove layer and stop */
-    if (!showAlertPolygons) {
-      if (layerRef.current) {
-        try { map.removeLayer(layerRef.current); } catch {}
-        layerRef.current = null;
-      }
-      return;
-    }
+    if (!showAlertPolygons) { removeLayers(); return; }
 
     async function load() {
       try {
         const res = await fetch(NWS_ALERTS_URL, { headers: HEADERS });
         if (!res.ok) return;
         const data = await res.json();
+        const all  = data.features ?? [];
 
-        /* Remove stale layer before replacing */
-        if (layerRef.current) {
-          try { map.removeLayer(layerRef.current); } catch {}
-          layerRef.current = null;
+        // Split: features with explicit polygon geometry vs zone-coded features
+        const hasPolygon = (f) =>
+          f.geometry?.type === 'Polygon' || f.geometry?.type === 'MultiPolygon';
+
+        const polygonFeatures = all.filter(hasPolygon);
+        const zoneFeatures    = showAdvisories ? all.filter((f) => !hasPolygon(f)) : [];
+
+        // --- Warnings layer (polygon geometry, solid borders) ---
+        if (warningLayerRef.current) {
+          try { map.removeLayer(warningLayerRef.current); } catch {}
+          warningLayerRef.current = null;
+        }
+        if (polygonFeatures.length) {
+          warningLayerRef.current = buildGeoLayer(polygonFeatures, map, featureStyle);
         }
 
-        /* Only keep features that carry polygon geometry */
-        const features = (data.features ?? []).filter(
-          (f) => f.geometry?.type === 'Polygon' || f.geometry?.type === 'MultiPolygon'
-        );
-        if (!features.length) return;
-
-        const geoLayer = L.geoJSON(
-          { type: 'FeatureCollection', features },
-          {
-            style: featureStyle,
-            zIndex: 300,
-            onEachFeature(feature, fLayer) {
-              /* Hover highlight */
-              fLayer.on('mouseover', (e) => {
-                e.target.setStyle({ fillOpacity: 0.6, weight: 3 });
-                e.target.bringToFront();
-              });
-              fLayer.on('mouseout', (e) => {
-                geoLayer.resetStyle(e.target);
-              });
-
-              /* Click → popup at click coordinates */
-              fLayer.on('click', (e) => {
-                L.popup({
-                  maxWidth: 340,
-                  className: 'nws-popup-wrap',
-                  closeButton: true,
-                })
-                  .setLatLng(e.latlng)
-                  .setContent(buildPopupHTML(feature.properties))
-                  .openOn(map);
-              });
-            },
+        // --- Advisories layer (zone boundaries, dashed borders) ---
+        if (advisoryLayerRef.current) {
+          try { map.removeLayer(advisoryLayerRef.current); } catch {}
+          advisoryLayerRef.current = null;
+        }
+        if (zoneFeatures.length) {
+          const advisoryGeoFeatures = await buildAdvisoryFeatures(zoneFeatures);
+          if (advisoryGeoFeatures.length) {
+            advisoryLayerRef.current = buildGeoLayer(advisoryGeoFeatures, map, advisoryStyle);
           }
-        ).addTo(map);
-
-        layerRef.current = geoLayer;
+        }
       } catch (err) {
         console.error('[AlertPolygonLayer]', err);
       }
@@ -156,15 +252,11 @@ export function AlertPolygonLayer() {
 
     load();
     const timer = setInterval(load, REFRESH_MS);
-
     return () => {
       clearInterval(timer);
-      if (layerRef.current) {
-        try { map.removeLayer(layerRef.current); } catch {}
-        layerRef.current = null;
-      }
+      removeLayers();
     };
-  }, [map, showAlertPolygons]);
+  }, [map, showAlertPolygons, showAdvisories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }

@@ -1,4 +1,5 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, AlertTriangle } from 'lucide-react';
 import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
@@ -162,7 +163,65 @@ function DisplayTab() {
   );
 }
 
+function AdvisoryConfirm({ onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 2000,
+      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 24,
+    }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)', padding: '20px 22px',
+        maxWidth: 340, width: '100%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <AlertTriangle size={18} style={{ color: 'var(--warning)', flexShrink: 0 }} strokeWidth={2.5} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+            Performance Warning
+          </span>
+        </div>
+        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.65, margin: '0 0 8px' }}>
+          Enabling advisories fetches zone boundary data from the NWS API for every active advisory in the country — this can be <strong style={{ color: 'var(--text-primary)' }}>dozens of extra network requests</strong> and may noticeably slow down the page, especially on first load.
+        </p>
+        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.65, margin: '0 0 18px' }}>
+          Zone boundaries are cached after the first fetch, so subsequent reloads will be faster.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '7px 16px', fontSize: 12.5, fontWeight: 500,
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              padding: '7px 16px', fontSize: 12.5, fontWeight: 600,
+              background: 'var(--warning)', border: 'none',
+              borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+              color: '#000',
+            }}
+          >
+            Enable Anyway
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RadarTab() {
+  const [advisoryConfirmOpen, setAdvisoryConfirmOpen] = useState(false);
   const mapLayer         = useAppStore((s) => s.mapLayer);
   const setMapLayer      = useAppStore((s) => s.setMapLayer);
   const radarOpacity     = useAppStore((s) => s.radarOpacity);
@@ -177,6 +236,8 @@ function RadarTab() {
   const setShowSatellite = useAppStore((s) => s.setShowSatellite);
   const showAlertPolygons = useAppStore((s) => s.showAlertPolygons);
   const setShowAlertPolygons = useAppStore((s) => s.setShowAlertPolygons);
+  const showAdvisories = useAppStore((s) => s.showAdvisories);
+  const setShowAdvisories = useAppStore((s) => s.setShowAdvisories);
   const showArrows = useAppStore((s) => s.showArrows);
   const setShowArrows = useAppStore((s) => s.setShowArrows);
 
@@ -283,6 +344,7 @@ function RadarTab() {
         )}
         {showAlertPolygons && (
           <div style={{
+            marginTop: 4,
             padding: '8px 10px',
             background: 'var(--accent-dim)',
             border: '1px solid var(--glass-border)',
@@ -290,9 +352,37 @@ function RadarTab() {
             fontSize: 11,
             color: 'var(--text-secondary)',
             lineHeight: 1.5,
-            marginTop: 4,
           }}>
             Overlays active NWS warning polygons (US only). Click any polygon for full details.
+          </div>
+        )}
+        {showAlertPolygons && (
+          <div style={{
+            marginTop: 6,
+            paddingLeft: 14,
+            borderLeft: '2px solid var(--border)',
+          }}>
+            <div className="settings-row" style={{ marginBottom: 0 }}>
+              <Toggle
+                checked={showAdvisories}
+                onChange={(val) => val ? setAdvisoryConfirmOpen(true) : setShowAdvisories(false)}
+                label="Include Advisories & Statements"
+              />
+            </div>
+            {showAdvisories && (
+              <div style={{
+                marginTop: 4,
+                padding: '7px 10px',
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-xs)',
+                fontSize: 11,
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
+              }}>
+                Also shows heat advisories, fog advisories, air quality alerts, special statements, and more. Boundaries are county/zone-based (dashed outlines) and may load slower on first use.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -313,6 +403,13 @@ function RadarTab() {
         </div>
       </div>
       </>}  {/* end mapLayer === 'radar' */}
+
+      {advisoryConfirmOpen && (
+        <AdvisoryConfirm
+          onConfirm={() => { setShowAdvisories(true); setAdvisoryConfirmOpen(false); }}
+          onCancel={() => setAdvisoryConfirmOpen(false)}
+        />
+      )}
     </>
   );
 }

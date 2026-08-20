@@ -15,6 +15,7 @@ const useAppStore = create(
       showNowcast: true,
       showSatellite: false,
       showAlertPolygons: false,
+      showAdvisories: false,
       showArrows: false,
       mapZoom: 7,
       mapLayer: 'radar',       // 'radar' | 'aqi'
@@ -46,6 +47,7 @@ const useAppStore = create(
       setShowNowcast: (v) => set({ showNowcast: v }),
       setShowSatellite: (v) => set({ showSatellite: v }),
       setShowAlertPolygons: (v) => set({ showAlertPolygons: v }),
+      setShowAdvisories: (v) => set({ showAdvisories: v }),
       setShowArrows: (v) => set({ showArrows: v }),
       setMapZoom: (v) => set({ mapZoom: v }),
       setMapLayer: (v) => set({ mapLayer: v }),
@@ -111,6 +113,7 @@ const useAppStore = create(
         showNowcast: s.showNowcast,
         showSatellite: s.showSatellite,
         showAlertPolygons: s.showAlertPolygons,
+        showAdvisories: s.showAdvisories,
         showArrows: s.showArrows,
         mapZoom: s.mapZoom,
         mapLayer: s.mapLayer,
