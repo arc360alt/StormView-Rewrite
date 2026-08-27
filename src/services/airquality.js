@@ -25,17 +25,21 @@ export async function fetchAirQualityBatch(points) {
   if (points.length === 0) return [];
   const lats = points.map((p) => p.lat.toFixed(4)).join(',');
   const lons  = points.map((p) => p.lon.toFixed(4)).join(',');
-  const res = await fetch(
-    `${BASE}?latitude=${lats}&longitude=${lons}&current=us_aqi&timezone=auto`
-  );
-  if (!res.ok) throw new Error(`Air quality batch API error ${res.status}`);
-  const data = await res.json();
-  const arr = Array.isArray(data) ? data : [data];
-  return arr.map((d, i) => ({
-    lat: points[i].lat,
-    lon: points[i].lon,
-    aqi: d.current?.us_aqi ?? 0,
-  }));
+  try {
+    const res = await fetch(
+      `${BASE}?latitude=${lats}&longitude=${lons}&current=us_aqi&timezone=auto`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const arr = Array.isArray(data) ? data : [data];
+    return arr.map((d, i) => ({
+      lat: points[i]?.lat,
+      lon: points[i]?.lon,
+      aqi: d.current?.us_aqi ?? null,
+    })).filter((r) => r.lat != null);
+  } catch {
+    return [];
+  }
 }
 
 /** US EPA AQI breakpoints — colors follow the official EPA guidance. */
