@@ -45,8 +45,9 @@ export async function fetchRadarFrames(signal) {
 export const RADAR_TILE_SIZE   = 512;
 export const RADAR_ZOOM_OFFSET = -1; // requests tiles at z-1, giving 4× fewer tiles per frame
 
-export function getRadarTileUrl({ host, path, size = RADAR_TILE_SIZE, colorScheme = 7, smooth = 1, snow = 1 }) {
-  return `${host}${path}/${size}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
+export function getRadarTileUrl({ host, path, size = RADAR_TILE_SIZE, colorScheme = 7, smooth = 1, snow = 1, arrows = null }) {
+  const base = `${host}${path}/${size}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
+  return arrows ? `${base}?arrows=${arrows}` : base;
 }
 
 /**

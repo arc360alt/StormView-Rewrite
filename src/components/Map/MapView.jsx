@@ -33,16 +33,20 @@ const createLocationIcon = (theme) =>
     iconAnchor: [10, 10],
   });
 
-/* Tile layers for light/dark */
+/* Base map tile layers — OpenStreetMap (free, no API key).
+   Dark mode uses a CSS filter on the tile container to invert the light tiles into
+   a clean dark map without needing a separate dark tile server. */
 const TILE_LAYERS = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '© <a href="https://carto.com">CARTO</a>',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    className: 'tile-layer-dark',
     maxZoom: 19,
   },
   light: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '© <a href="https://carto.com">CARTO</a>',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    className: '',
     maxZoom: 19,
   },
 };
@@ -102,7 +106,11 @@ function MapController({ location, theme, mapRef, onContextMenu }) {
       map.removeLayer(tileLayerRef.current);
     }
     const def = TILE_LAYERS[theme] ?? TILE_LAYERS.dark;
-    const layer = L.tileLayer(def.url, { attribution: def.attribution, maxZoom: def.maxZoom });
+    const layer = L.tileLayer(def.url, {
+      attribution: def.attribution,
+      maxZoom: def.maxZoom,
+      className: def.className,
+    });
     layer.addTo(map);
     layer.bringToBack();
     tileLayerRef.current = layer;

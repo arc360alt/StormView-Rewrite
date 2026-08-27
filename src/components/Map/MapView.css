@@ -4,6 +4,12 @@
   z-index: 0;
 }
 
+/* Dark basemap: invert the light OSM tiles + hue-rotate to keep water blue-ish.
+   Desaturating prevents over-vivid colors from the inversion. */
+.tile-layer-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.35);
+}
+
 /* GPU-accelerated radar pane: each tile-layer container crossfades on the GPU */
 .leaflet-radar-pane > div {
   will-change: opacity;

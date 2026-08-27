@@ -6,9 +6,10 @@ import { fetchAirQuality, fetchAirQualityBatch, getAqiCategory } from '../../ser
 /* ── Grid / cache config ── */
 
 const NICE_STEPS = [0.5, 1, 1.5, 2, 3, 4, 5, 8, 10, 15, 20, 30, 45, 90];
-const MAX_BATCH  = 400;        // max points per batch request (one HTTP call)
-const CACHE_TTL  = 30 * 60 * 1000;
-const UPDATE_MS  = 1000;
+const MAX_BATCH  = 200;        // max points fetched per update cycle
+const CHUNK      = 100;        // points per HTTP request (avoids URL length limits)
+const CACHE_TTL  = 60 * 60 * 1000;
+const UPDATE_MS  = 2000;
 const CANVAS_SZ  = 256;        // higher res canvas for denser grid
 
 // Module-level cache persists across AqiLayer mount/unmount cycles (e.g. layer toggle).
@@ -20,9 +21,10 @@ const IN_FLIGHT  = new Set(); // keys currently being fetched
 
 function getStep(latSpan, lonSpan) {
   const largest = Math.max(latSpan, lonSpan);
-  // Target ~25 cells across the widest dimension — denser grid reveals smoke plume shape
   const raw = largest / 25;
-  return NICE_STEPS.find((s) => s >= raw) ?? 90;
+  const step = NICE_STEPS.find((s) => s >= raw) ?? 90;
+  // Cap at 2° (~220 km) — keeps plume detail even at continental zoom
+  return Math.min(step, 2);
 }
 
 function snapV(v, step) {
@@ -97,7 +99,7 @@ function aqiToRgb(aqi) {
   return COLOR_RAMP[COLOR_RAMP.length - 1].rgb;
 }
 
-function idwAqi(lat, lon, pts, power = 1.5) {
+function idwAqi(lat, lon, pts, power = 3) {
   let wSum = 0, vSum = 0;
   for (const pt of pts) {
     const d2 = (lat - pt.lat) ** 2 + (lon - pt.lon) ** 2;
@@ -109,51 +111,22 @@ function idwAqi(lat, lon, pts, power = 1.5) {
   return wSum > 0 ? vSum / wSum : 0;
 }
 
-// Bilinear interpolation on the regular grid — no bullseye artifacts.
-// Falls back to IDW if any of the 4 corners are missing (viewport edges).
-function bilinearAqi(lat, lon, step, ptMap, pts) {
-  const latFloor = Math.round(Math.floor(lat / step) * step * 1e6) / 1e6;
-  const lonFloor = Math.round(Math.floor(lon / step) * step * 1e6) / 1e6;
-  const latCeil  = Math.round((latFloor + step) * 1e6) / 1e6;
-  const lonCeil  = Math.round((lonFloor + step) * 1e6) / 1e6;
-
-  const bl = ptMap.get(`${latFloor.toFixed(2)},${lonFloor.toFixed(2)}`);
-  const br = ptMap.get(`${latFloor.toFixed(2)},${lonCeil.toFixed(2)}`);
-  const tl = ptMap.get(`${latCeil.toFixed(2)},${lonFloor.toFixed(2)}`);
-  const tr = ptMap.get(`${latCeil.toFixed(2)},${lonCeil.toFixed(2)}`);
-
-  if (bl != null && br != null && tl != null && tr != null) {
-    const tx = (lon - lonFloor) / step;
-    const ty = (lat - latFloor) / step;
-    return bl * (1 - tx) * (1 - ty) + br * tx * (1 - ty) + tl * (1 - tx) * ty + tr * tx * ty;
-  }
-
-  return idwAqi(lat, lon, pts);
-}
-
-function renderCanvas(bounds, pts, step) {
+function renderCanvas(bounds, pts) {
   const sz = CANVAS_SZ;
-  const canvas = document.createElement('canvas');
-  canvas.width = sz; canvas.height = sz;
-  const ctx = canvas.getContext('2d');
-  const img = ctx.createImageData(sz, sz);
-
   const latSpan = bounds.getNorth() - bounds.getSouth();
   const lonSpan = bounds.getEast()  - bounds.getWest();
 
-  // Build O(1) lookup for bilinear corner lookups
-  const ptMap = new Map();
-  for (const pt of pts) {
-    ptMap.set(`${pt.lat.toFixed(2)},${pt.lon.toFixed(2)}`, pt.aqi);
-  }
+  // Draw raw IDW pixels onto an offscreen canvas
+  const offscreen = document.createElement('canvas');
+  offscreen.width = sz; offscreen.height = sz;
+  const offCtx = offscreen.getContext('2d');
+  const img = offCtx.createImageData(sz, sz);
 
   for (let row = 0; row < sz; row++) {
     const lat = bounds.getNorth() - (row / sz) * latSpan;
     for (let col = 0; col < sz; col++) {
       const lon = bounds.getWest() + (col / sz) * lonSpan;
-      const aqi = step
-        ? bilinearAqi(lat, lon, step, ptMap, pts)
-        : idwAqi(lat, lon, pts);
+      const aqi = idwAqi(lat, lon, pts);
       const [r, g, b] = aqiToRgb(aqi);
       const i = (row * sz + col) * 4;
       img.data[i]     = r;
@@ -162,8 +135,16 @@ function renderCanvas(bounds, pts, step) {
       img.data[i + 3] = 170;
     }
   }
+  offCtx.putImageData(img, 0, 0);
 
-  ctx.putImageData(img, 0, 0);
+  // Apply Gaussian blur via CSS filter on a second canvas draw
+  // (filter only works with drawImage, not putImageData directly)
+  const canvas = document.createElement('canvas');
+  canvas.width = sz; canvas.height = sz;
+  const ctx = canvas.getContext('2d');
+  ctx.filter = 'blur(4px)';
+  ctx.drawImage(offscreen, 0, 0);
+
   return canvas.toDataURL('image/png');
 }
 
@@ -205,11 +186,10 @@ export function AqiLayer() {
   const popupRef   = useRef(null);
   const timerRef   = useRef(null);
   const fetchId    = useRef(0);
-  const stepRef    = useRef(null); // current grid step, for bilinear interpolation
 
   const pushOverlay = useCallback((bounds, pts) => {
     if (pts.length < 2) return;
-    const dataUrl = renderCanvas(bounds, pts, stepRef.current);
+    const dataUrl = renderCanvas(bounds, pts);
     if (overlayRef.current) {
       try { map.removeLayer(overlayRef.current); } catch {}
     }
@@ -227,7 +207,6 @@ export function AqiLayer() {
     const latSpan = bounds.getNorth() - bounds.getSouth();
     const lonSpan = bounds.getEast()  - bounds.getWest();
     const step    = getStep(latSpan, lonSpan);
-    stepRef.current = step;
     const pad     = step * 2;
 
     // Immediately render whatever is already cached for this viewport
@@ -256,17 +235,22 @@ export function AqiLayer() {
 
     for (const p of toFetch) IN_FLIGHT.add(cacheKey(p.lat, p.lon));
 
-    try {
-      const results = await fetchAirQualityBatch(toFetch);
-      const now = Date.now();
-      for (const { lat, lon, aqi } of results) {
+    // Split into CHUNK-sized batches to stay under URL length limits
+    const chunks = [];
+    for (let i = 0; i < toFetch.length; i += CHUNK) chunks.push(toFetch.slice(i, i + CHUNK));
+    const settled = await Promise.allSettled(chunks.map(fetchAirQualityBatch));
+    const now = Date.now();
+    for (const result of settled) {
+      if (result.status !== 'fulfilled') continue;
+      for (const { lat, lon, aqi } of result.value) {
         const k = cacheKey(lat, lon);
-        if (aqi > 0) GEO_CACHE.set(k, { aqi, ts: now });
+        // Cache null-AQI (clean air = 0) to anchor IDW between plumes
+        if (aqi != null) GEO_CACHE.set(k, { aqi, ts: now });
         IN_FLIGHT.delete(k);
       }
-    } catch {
-      for (const p of toFetch) IN_FLIGHT.delete(cacheKey(p.lat, p.lon));
     }
+    // Clean up IN_FLIGHT for any points that didn't appear in results
+    for (const p of toFetch) IN_FLIGHT.delete(cacheKey(p.lat, p.lon));
 
     if (id !== fetchId.current) return; // viewport changed while we were fetching
 

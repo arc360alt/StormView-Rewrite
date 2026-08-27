@@ -32,14 +32,14 @@ const TILE_OPTS = {
 
 /* ---- Layer helpers ---- */
 
-function frameKey(frame, cs, tq) {
-  return `${frame.path}:${cs}:${tq}`;
+function frameKey(frame, cs, tq, arrows) {
+  return `${frame.path}:${cs}:${tq}:${arrows ?? 'none'}`;
 }
 
-function getOrCreate(frame, cs, tq, cache) {
-  const k = frameKey(frame, cs, tq);
+function getOrCreate(frame, cs, tq, arrows, cache) {
+  const k = frameKey(frame, cs, tq, arrows);
   if (cache.has(k)) return [k, cache.get(k)];
-  const url = getRadarTileUrl({ host: frame.host, path: frame.path, colorScheme: cs, size: tq });
+  const url = getRadarTileUrl({ host: frame.host, path: frame.path, colorScheme: cs, size: tq, arrows });
   const layer = L.tileLayer(url, { ...TILE_OPTS });
 
   // Decode tile PNGs off the main thread (avoids render jank when tiles arrive)
@@ -63,7 +63,13 @@ export function RadarLayer() {
   const cs          = useAppStore((s) => s.radarColorScheme);
   const tileQuality = useAppStore((s) => s.radarTileQuality);
   const opacity     = useAppStore((s) => s.radarOpacity);
+  const showArrows  = useAppStore((s) => s.showArrows);
+  const theme       = useAppStore((s) => s.theme);
   const setProgress = useAppStore((s) => s.setRadarTileProgress);
+
+  // dark UI → light arrows for contrast; light UI → dark arrows
+  const isDark    = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const arrowStyle = showArrows ? (isDark ? 'light' : 'dark') : null;
 
   const cache       = useRef(new Map());
   const readyKeys   = useRef(new Set());
@@ -128,7 +134,7 @@ export function RadarLayer() {
 
     const wanted = new Set();
     for (let j = 0; j < windowSize; j++) {
-      wanted.add(frameKey(frames[(currentIdx + j) % frames.length], cs, tileQuality));
+      wanted.add(frameKey(frames[(currentIdx + j) % frames.length], cs, tileQuality, arrowStyle));
     }
 
     // Evict stale layers (snapshot first to avoid mutating Map during iteration)
@@ -162,7 +168,7 @@ export function RadarLayer() {
 
     for (let j = 0; j < windowSize; j++) {
       const frame = frames[(currentIdx + j) % frames.length];
-      const [k, layer] = getOrCreate(frame, cs, tileQuality, cache.current);
+      const [k, layer] = getOrCreate(frame, cs, tileQuality, arrowStyle, cache.current);
 
       if (!layer._map) {
         layer.addTo(map);
@@ -201,14 +207,14 @@ export function RadarLayer() {
     }
 
     // Show current frame (CSS transition in MapView.css crossfades on GPU)
-    const [k, layer] = getOrCreate(frames[currentIdx], cs, tileQuality, cache.current);
+    const [k, layer] = getOrCreate(frames[currentIdx], cs, tileQuality, arrowStyle, cache.current);
     if (activeKey.current && activeKey.current !== k) {
       cache.current.get(activeKey.current)?.setOpacity(0);
     }
     layer.setOpacity(useAppStore.getState().radarOpacity);
     activeKey.current = k;
 
-  }, [map, frames, currentIdx, cs, tileQuality, setProgress, viewEpoch]);
+  }, [map, frames, currentIdx, cs, tileQuality, arrowStyle, setProgress, viewEpoch]);
 
   /* ---- Opacity slider ---- */
   useEffect(() => {
