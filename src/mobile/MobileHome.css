@@ -1,0 +1,224 @@
+/* =============================================
+   Mobile weather page
+   ============================================= */
+
+.mobile-home {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 0 12px calc(40px + env(safe-area-inset-bottom));
+}
+
+/* ---- Header ---- */
+.m-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(16px + env(safe-area-inset-top)) 4px 6px 4px;
+}
+
+.m-header-loc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.m-header-loc-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-header-loc-state {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.m-header-set {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.m-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.m-header-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.m-header-btn:hover,
+.m-header-btn:active {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
+
+.m-api-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 4px 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.m-api-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* ---- Body layout ---- */
+.m-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.m-notice {
+  padding: 9px 12px;
+  background: var(--warning-dim);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--warning);
+  line-height: 1.5;
+}
+
+/* Card wrapper for the reused sidebar sections */
+.m-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+/* The reused components already carry .sidebar-section padding */
+
+/* ---- Current conditions ("temperature gauge") ---- */
+.m-current {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.m-current-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m-current-temp {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1;
+}
+.m-current-temp-num {
+  font-size: 66px;
+  font-weight: 300;
+  letter-spacing: -2px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.m-current-temp-unit {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.m-current-condition {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.m-current-stats,
+.m-current-sun {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.m-current-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.m-hilow-high { color: #F97316; font-weight: 500; margin-right: 8px; }
+.m-hilow-low  { color: #60A5FA; font-weight: 500; }
+
+.m-current-sun {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+}
+
+/* ---- Loading / empty states ---- */
+.m-loading,
+.m-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.m-empty-btn {
+  margin-top: 4px;
+  padding: 9px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}

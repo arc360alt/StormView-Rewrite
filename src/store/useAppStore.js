@@ -9,6 +9,7 @@ const useAppStore = create(
       weatherAPI: 'openmeteo', // 'nws' | 'openmeteo'
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
+      newMobileLayout: true,   // use the dedicated mobile weather page on phones
       radarOpacity: 0.75,
       radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)
       radarColorScheme: 7,     // 0-11 LibreWXR color scheme IDs (7 = Rainbow)
@@ -41,6 +42,7 @@ const useAppStore = create(
       setWeatherAPI: (api) => set({ weatherAPI: api }),
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
+      setNewMobileLayout: (v) => set({ newMobileLayout: v }),
       setRadarOpacity: (v) => set({ radarOpacity: v }),
       setRadarTileQuality: (v) => set({ radarTileQuality: v }),
       setRadarColorScheme: (v) => set({ radarColorScheme: v }),
@@ -107,6 +109,7 @@ const useAppStore = create(
         weatherAPI: s.weatherAPI,
         units: s.units,
         sidebarPosition: s.sidebarPosition,
+        newMobileLayout: s.newMobileLayout,
         radarOpacity: s.radarOpacity,
         radarTileQuality: s.radarTileQuality,
         radarColorScheme: s.radarColorScheme,

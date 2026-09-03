@@ -1,0 +1,40 @@
+/* =============================================
+   Full-screen mobile radar experience
+   ============================================= */
+
+.mobile-radar {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.mobile-radar-back {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 14px;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px 8px 10px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mobile-radar-back:active {
+  background: var(--surface-elevated);
+}
+
+/* Push the Leaflet zoom controls below the back button so they don't overlap */
+.mobile-radar .leaflet-top.leaflet-left {
+  margin-top: calc(58px + env(safe-area-inset-top));
+}

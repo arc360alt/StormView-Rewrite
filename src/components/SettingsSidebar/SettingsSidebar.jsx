@@ -126,6 +126,8 @@ function DisplayTab() {
   const setTheme = useAppStore((s) => s.setTheme);
   const sidebarPosition = useAppStore((s) => s.sidebarPosition);
   const setSidebarPosition = useAppStore((s) => s.setSidebarPosition);
+  const newMobileLayout = useAppStore((s) => s.newMobileLayout);
+  const setNewMobileLayout = useAppStore((s) => s.setNewMobileLayout);
 
   return (
     <>
@@ -157,6 +159,16 @@ function DisplayTab() {
             value={sidebarPosition}
             onChange={setSidebarPosition}
           />
+        </div>
+        <div className="settings-row" style={{ marginTop: 6 }}>
+          <div>
+            <div className="settings-row-label">New Mobile Layout</div>
+            <div className="settings-row-sub">
+              On phones, use the dedicated scrollable weather page. Turn off to
+              use the classic map + bottom sheet.
+            </div>
+          </div>
+          <Toggle checked={newMobileLayout} onChange={setNewMobileLayout} />
         </div>
       </div>
     </>

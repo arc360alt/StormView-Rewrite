@@ -16,11 +16,19 @@
   background: var(--surface-hover);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  cursor: default;
-  transition: background 0.15s ease;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .hourly-item:hover {
+  background: var(--surface-active);
+  border-color: var(--border-strong);
+}
+.hourly-item:active {
   background: var(--surface-active);
 }
 
