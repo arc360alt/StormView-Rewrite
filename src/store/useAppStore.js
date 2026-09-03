@@ -10,6 +10,9 @@ const useAppStore = create(
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
       newMobileLayout: true,   // use the dedicated mobile weather page on phones
+      radarSource: 'openmeteo', // 'stormcast' (LibreWXR) | 'openmeteo' (Open-Meteo maps)
+      openmeteoDomain: 'ncep_gfs013',        // which Open-Meteo weather model
+      openmeteoVariable: 'precipitation', // which Open-Meteo map layer to render
       radarOpacity: 0.75,
       radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)
       radarColorScheme: 7,     // 0-11 LibreWXR color scheme IDs (7 = Rainbow)
@@ -43,6 +46,9 @@ const useAppStore = create(
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
       setNewMobileLayout: (v) => set({ newMobileLayout: v }),
+      setRadarSource: (v) => set({ radarSource: v }),
+      setOpenmeteoDomain: (v) => set({ openmeteoDomain: v }),
+      setOpenmeteoVariable: (v) => set({ openmeteoVariable: v }),
       setRadarOpacity: (v) => set({ radarOpacity: v }),
       setRadarTileQuality: (v) => set({ radarTileQuality: v }),
       setRadarColorScheme: (v) => set({ radarColorScheme: v }),
@@ -110,6 +116,9 @@ const useAppStore = create(
         units: s.units,
         sidebarPosition: s.sidebarPosition,
         newMobileLayout: s.newMobileLayout,
+        radarSource: s.radarSource,
+        openmeteoDomain: s.openmeteoDomain,
+        openmeteoVariable: s.openmeteoVariable,
         radarOpacity: s.radarOpacity,
         radarTileQuality: s.radarTileQuality,
         radarColorScheme: s.radarColorScheme,

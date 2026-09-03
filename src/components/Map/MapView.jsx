@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { RadarLayer } from './RadarLayer';
 import { AqiLayer } from './AqiLayer';
+
+// Heavy (~pulls in the Open-Meteo file reader + wasm) — only load it when the
+// user actually selects the Open-Meteo radar source.
+const OpenMeteoRadarLayer = lazy(() =>
+  import('./OpenMeteoRadarLayer').then((m) => ({ default: m.OpenMeteoRadarLayer }))
+);
 import { AlertPolygonLayer } from './AlertPolygonLayer';
 import { MapContextMenu } from './MapContextMenu';
 import useAppStore from '../../store/useAppStore';
@@ -123,10 +129,11 @@ function MapController({ location, theme, mapRef, onContextMenu }) {
 }
 
 export function MapView() {
-  const location = useAppStore((s) => s.location);
-  const mapZoom  = useAppStore((s) => s.mapZoom);
-  const mapLayer = useAppStore((s) => s.mapLayer);
-  const theme    = useTheme();
+  const location    = useAppStore((s) => s.location);
+  const mapZoom     = useAppStore((s) => s.mapZoom);
+  const mapLayer    = useAppStore((s) => s.mapLayer);
+  const radarSource = useAppStore((s) => s.radarSource);
+  const theme       = useTheme();
 
   const mapRef = useRef(null);
   const [menu, setMenu] = useState(null);
@@ -150,7 +157,11 @@ export function MapView() {
           onContextMenu={setMenu}
         />
         <SatelliteLayer />
-        {mapLayer === 'radar' ? <RadarLayer /> : <AqiLayer />}
+        {mapLayer === 'radar'
+          ? (radarSource === 'openmeteo'
+              ? <Suspense fallback={null}><OpenMeteoRadarLayer /></Suspense>
+              : <RadarLayer />)
+          : <AqiLayer />}
         <AlertPolygonLayer />
         {location && (
           <Marker

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { Radar, ChevronRight } from 'lucide-react';
@@ -6,6 +7,10 @@ import { useRadar } from '../hooks/useRadar';
 import { useTheme } from '../hooks/useTheme';
 import useAppStore from '../store/useAppStore';
 import './MobileRadarPreview.css';
+
+const OpenMeteoRadarLayer = lazy(() =>
+  import('../components/Map/OpenMeteoRadarLayer').then((m) => ({ default: m.OpenMeteoRadarLayer }))
+);
 
 /**
  * A small, non-interactive radar map centred on the user's location.
@@ -24,6 +29,7 @@ const locationIcon = (theme) =>
 
 export function MobileRadarPreview({ onOpen }) {
   const location = useAppStore((s) => s.location);
+  const radarSource = useAppStore((s) => s.radarSource);
   const theme = useTheme();
 
   // Keep radar frames warm so the preview (and the full view) have data ready.
@@ -52,7 +58,9 @@ export function MobileRadarPreview({ onOpen }) {
             className={theme === 'light' ? '' : 'tile-layer-dark'}
             maxZoom={19}
           />
-          <RadarLayer />
+          {radarSource === 'openmeteo'
+            ? <Suspense fallback={null}><OpenMeteoRadarLayer /></Suspense>
+            : <RadarLayer />}
           <Marker position={[location.lat, location.lon]} icon={locationIcon(theme)} />
         </MapContainer>
       </div>

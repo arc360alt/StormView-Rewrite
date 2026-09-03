@@ -144,6 +144,18 @@
   margin-bottom: 6px;
 }
 
+/* Stacked variant — label on top, control full-width below.
+   Use when the control (e.g. a long-option <select>) would otherwise squeeze
+   the label into a sliver. */
+.settings-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.settings-row--stack .settings-select {
+  width: 100%;
+}
+
 .settings-row-label {
   font-size: 13px;
   color: var(--text-primary);

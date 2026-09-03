@@ -1,10 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
+import { fetchOpenMeteoLayers, DOMAINS } from '../../services/openmeteoRadar';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
+
+/** Loads the layer list (the model's variable list) for a domain. */
+function useOpenMeteoLayers(enabled, domain) {
+  const [layers, setLayers] = useState([]);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    setLayers([]);
+    fetchOpenMeteoLayers(undefined, domain)
+      .then((l) => { if (alive) setLayers(l); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [enabled, domain]);
+  return layers;
+}
 
 const TABS = [
   { id: 'location', label: 'Location' },
@@ -236,6 +252,12 @@ function RadarTab() {
   const [advisoryConfirmOpen, setAdvisoryConfirmOpen] = useState(false);
   const mapLayer         = useAppStore((s) => s.mapLayer);
   const setMapLayer      = useAppStore((s) => s.setMapLayer);
+  const radarSource      = useAppStore((s) => s.radarSource);
+  const setRadarSource   = useAppStore((s) => s.setRadarSource);
+  const openmeteoDomain      = useAppStore((s) => s.openmeteoDomain);
+  const setOpenmeteoDomain    = useAppStore((s) => s.setOpenmeteoDomain);
+  const openmeteoVariable    = useAppStore((s) => s.openmeteoVariable);
+  const setOpenmeteoVariable  = useAppStore((s) => s.setOpenmeteoVariable);
   const radarOpacity     = useAppStore((s) => s.radarOpacity);
   const setRadarOpacity  = useAppStore((s) => s.setRadarOpacity);
   const radarTileQuality = useAppStore((s) => s.radarTileQuality);
@@ -252,6 +274,14 @@ function RadarTab() {
   const setShowAdvisories = useAppStore((s) => s.setShowAdvisories);
   const showArrows = useAppStore((s) => s.showArrows);
   const setShowArrows = useAppStore((s) => s.setShowArrows);
+
+  const openmeteoLayers = useOpenMeteoLayers(radarSource === 'openmeteo', openmeteoDomain);
+
+  const changeDomain = (slug) => {
+    setOpenmeteoDomain(slug);
+    // Variable lists differ per model — reset to the one they all share.
+    if (openmeteoVariable !== 'precipitation') setOpenmeteoVariable('precipitation');
+  };
 
   return (
     <>
@@ -284,25 +314,96 @@ function RadarTab() {
       {/* ---- Radar-only options ---- */}
       {mapLayer === 'radar' && <>
       <div className="settings-group">
-        <div className="settings-group-label">Radar Options</div>
-        <div className="settings-row" style={{ marginBottom: 6 }}>
+        <div className="settings-group-label">Radar Source</div>
+        <div className="settings-row">
           <div>
-            <div className="settings-row-label">Tile Quality</div>
+            <div className="settings-row-label">Provider</div>
             <div className="settings-row-sub">
-              {radarTileQuality === 256
-                ? 'Fast — 256 px tiles, loads quicker, blurry at high zoom'
-                : 'Sharp — 512 px tiles, full detail, slower to load'}
+              {radarSource === 'openmeteo'
+                ? 'Open-Meteo Maps — weather-model data rendered in-browser. Very fast and global, with short-range forecast steps. Pick a model and layer below.'
+                : 'LibreWXR / StormCast — observed radar mosaic with a 90-minute nowcast (best over the US).'}
             </div>
           </div>
-          <SegControl
-            options={[
-              { label: 'Fast', value: 256 },
-              { label: 'Sharp', value: 512 },
-            ]}
-            value={radarTileQuality}
-            onChange={setRadarTileQuality}
-          />
+          <select
+            className="settings-select"
+            value={radarSource}
+            onChange={(e) => setRadarSource(e.target.value)}
+          >
+            <option value="stormcast">LibreWXR</option>
+            <option value="openmeteo">Open-Meteo</option>
+          </select>
         </div>
+
+        {radarSource === 'openmeteo' && (
+          <>
+            <div className="settings-row settings-row--stack" style={{ marginTop: 6 }}>
+              <div>
+                <div className="settings-row-label">Model</div>
+                <div className="settings-row-sub">
+                  Which weather model to pull data from.
+                </div>
+              </div>
+              <select
+                className="settings-select"
+                value={openmeteoDomain}
+                onChange={(e) => changeDomain(e.target.value)}
+              >
+                {DOMAINS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}{d.scope === 'US' ? ' (US)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="settings-row settings-row--stack" style={{ marginTop: 6 }}>
+              <div>
+                <div className="settings-row-label">Layer</div>
+                <div className="settings-row-sub">
+                  Which variable to render on the map.
+                </div>
+              </div>
+              <select
+                className="settings-select"
+                value={openmeteoVariable}
+                onChange={(e) => setOpenmeteoVariable(e.target.value)}
+                disabled={openmeteoLayers.length === 0}
+              >
+                {openmeteoLayers.length === 0 ? (
+                  <option>{openmeteoVariable}</option>
+                ) : (
+                  openmeteoLayers.map((l) => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))
+                )}
+              </select>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="settings-group">
+        <div className="settings-group-label">Radar Options</div>
+        {radarSource === 'stormcast' && (
+          <div className="settings-row" style={{ marginBottom: 6 }}>
+            <div>
+              <div className="settings-row-label">Tile Quality</div>
+              <div className="settings-row-sub">
+                {radarTileQuality === 256
+                  ? 'Fast — 256 px tiles, loads quicker, blurry at high zoom'
+                  : 'Sharp — 512 px tiles, full detail, slower to load'}
+              </div>
+            </div>
+            <SegControl
+              options={[
+                { label: 'Fast', value: 256 },
+                { label: 'Sharp', value: 512 },
+              ]}
+              value={radarTileQuality}
+              onChange={setRadarTileQuality}
+            />
+          </div>
+        )}
         <SettingsSlider
           label="Radar Opacity"
           value={radarOpacity}
@@ -316,7 +417,7 @@ function RadarTab() {
           <Toggle
             checked={showNowcast}
             onChange={setShowNowcast}
-            label="Show 90-min Nowcast"
+            label={radarSource === 'openmeteo' ? 'Show Forecast Steps' : 'Show 90-min Nowcast'}
           />
         </div>
         <div className="settings-row">
@@ -333,14 +434,16 @@ function RadarTab() {
             label="NWS Warning Polygons"
           />
         </div>
-        <div className="settings-row">
-          <Toggle
-            checked={showArrows}
-            onChange={setShowArrows}
-            label="Storm Motion Arrows"
-          />
-        </div>
-        {showArrows && (
+        {radarSource === 'stormcast' && (
+          <div className="settings-row">
+            <Toggle
+              checked={showArrows}
+              onChange={setShowArrows}
+              label="Storm Motion Arrows"
+            />
+          </div>
+        )}
+        {radarSource === 'stormcast' && showArrows && (
           <div style={{
             padding: '8px 10px',
             background: 'var(--accent-dim)',
@@ -399,6 +502,7 @@ function RadarTab() {
         )}
       </div>
 
+      {radarSource === 'stormcast' && (
       <div className="settings-group">
         <div className="settings-group-label">Color Scheme</div>
         <div className="color-scheme-grid">
@@ -414,6 +518,7 @@ function RadarTab() {
           ))}
         </div>
       </div>
+      )}
       </>}  {/* end mapLayer === 'radar' */}
 
       {advisoryConfirmOpen && (
