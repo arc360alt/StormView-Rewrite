@@ -5,7 +5,7 @@ const useAppStore = create(
   persist(
     (set, get) => ({
       // ---- Persisted settings ----
-      theme: 'dark',           // 'dark' | 'light' | 'system'
+      theme: 'light',           // 'dark' | 'light' | 'system'
       weatherAPI: 'openmeteo', // 'nws' | 'openmeteo'
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
@@ -15,7 +15,7 @@ const useAppStore = create(
       radarColorScheme: 7,     // 0-11 LibreWXR color scheme IDs (7 = Rainbow)
       showNowcast: true,
       showSatellite: false,
-      showAlertPolygons: false,
+      showAlertPolygons: true,
       showAdvisories: false,
       showArrows: false,
       mapZoom: 7,
