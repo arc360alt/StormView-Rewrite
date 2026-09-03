@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { Droplets } from 'lucide-react';
+import { HourDetailModal } from './HourDetailModal';
 import useAppStore from '../../store/useAppStore';
 import './HourlyForecast.css';
 
 export function HourlyForecast({ data }) {
   const units = useAppStore((s) => s.units);
   const tempUnit = units === 'imperial' ? '°' : '°';
+  const [selectedHour, setSelectedHour] = useState(null);
 
   const allHourly = data.hourly ?? [];
   // Find the most recent hourly slot at or before now — that's the "current" hour
@@ -25,7 +28,12 @@ export function HourlyForecast({ data }) {
       <div className="sidebar-section-title">Hourly</div>
       <div className="hourly-scroll">
         {hourly.map((h, i) => (
-          <div key={i} className="hourly-item">
+          <button
+            key={i}
+            className="hourly-item"
+            onClick={() => setSelectedHour(h)}
+            title="View hour details"
+          >
             <span className="hourly-time">
               {i === 0 ? 'Now' : format(h.time, 'ha')}
             </span>
@@ -37,9 +45,13 @@ export function HourlyForecast({ data }) {
               </div>
             )}
             <span className="hourly-temp">{h.temp}{tempUnit}</span>
-          </div>
+          </button>
         ))}
       </div>
+
+      {selectedHour && (
+        <HourDetailModal hour={selectedHour} onClose={() => setSelectedHour(null)} />
+      )}
     </div>
   );
 }

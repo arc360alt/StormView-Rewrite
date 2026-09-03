@@ -129,6 +129,8 @@ export function RadarLayer() {
   /* ---- Windowed load: current frame + PRELOAD_AHEAD next frames ---- */
   useEffect(() => {
     if (!frames.length) return;
+    // Frames from the Open-Meteo source have no tile `path` — that layer renders them.
+    if (frames[0]?.path == null) return;
 
     const windowSize = PRELOAD_AHEAD + 1;
 

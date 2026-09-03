@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@openmeteo/weather-map-layer": "^0.1.0",
     "date-fns": "^3.6.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.400.0",

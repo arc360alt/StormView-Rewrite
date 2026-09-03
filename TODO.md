@@ -1,0 +1,1 @@
+- Add a widgets feature on the sidebar/homepage that lets you add or remove premade sections to your weather sidebar/homepage.

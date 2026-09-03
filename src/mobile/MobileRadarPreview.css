@@ -1,0 +1,68 @@
+/* =============================================
+   Mobile radar preview card
+   ============================================= */
+
+.m-radar-preview {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 200px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+}
+
+.m-radar-preview-map {
+  position: absolute;
+  inset: 0;
+}
+
+.m-radar-preview-leaflet {
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+  pointer-events: none;
+}
+
+/* Sit above the map, capture nothing — the button itself handles the tap */
+.m-radar-preview-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0) 65%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+.m-radar-preview-label,
+.m-radar-preview-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.m-radar-preview-label { color: var(--accent); }
+
+.m-radar-preview-cta { align-self: flex-end; }

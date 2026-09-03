@@ -5,16 +5,20 @@ const useAppStore = create(
   persist(
     (set, get) => ({
       // ---- Persisted settings ----
-      theme: 'dark',           // 'dark' | 'light' | 'system'
+      theme: 'light',           // 'dark' | 'light' | 'system'
       weatherAPI: 'openmeteo', // 'nws' | 'openmeteo'
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
+      newMobileLayout: true,   // use the dedicated mobile weather page on phones
+      radarSource: 'openmeteo', // 'stormcast' (LibreWXR) | 'openmeteo' (Open-Meteo maps)
+      openmeteoDomain: 'ncep_gfs013',        // which Open-Meteo weather model
+      openmeteoVariable: 'precipitation', // which Open-Meteo map layer to render
       radarOpacity: 0.75,
       radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)
       radarColorScheme: 7,     // 0-11 LibreWXR color scheme IDs (7 = Rainbow)
       showNowcast: true,
       showSatellite: false,
-      showAlertPolygons: false,
+      showAlertPolygons: true,
       showAdvisories: false,
       showArrows: false,
       mapZoom: 7,
@@ -41,6 +45,10 @@ const useAppStore = create(
       setWeatherAPI: (api) => set({ weatherAPI: api }),
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
+      setNewMobileLayout: (v) => set({ newMobileLayout: v }),
+      setRadarSource: (v) => set({ radarSource: v }),
+      setOpenmeteoDomain: (v) => set({ openmeteoDomain: v }),
+      setOpenmeteoVariable: (v) => set({ openmeteoVariable: v }),
       setRadarOpacity: (v) => set({ radarOpacity: v }),
       setRadarTileQuality: (v) => set({ radarTileQuality: v }),
       setRadarColorScheme: (v) => set({ radarColorScheme: v }),
@@ -107,6 +115,10 @@ const useAppStore = create(
         weatherAPI: s.weatherAPI,
         units: s.units,
         sidebarPosition: s.sidebarPosition,
+        newMobileLayout: s.newMobileLayout,
+        radarSource: s.radarSource,
+        openmeteoDomain: s.openmeteoDomain,
+        openmeteoVariable: s.openmeteoVariable,
         radarOpacity: s.radarOpacity,
         radarTileQuality: s.radarTileQuality,
         radarColorScheme: s.radarColorScheme,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { fetchRadarFrames } from '../services/stormcast';
+import { fetchOpenMeteoRadarFrames } from '../services/openmeteoRadar';
 import useAppStore from '../store/useAppStore';
 
 const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes — matches server's LIBREWXR_FETCH_INTERVAL (600s)
@@ -14,6 +15,8 @@ export function useRadar() {
   const radarPlaying      = useAppStore((s) => s.radarPlaying);
   const radarSpeed        = useAppStore((s) => s.radarSpeed);
   const showNowcast       = useAppStore((s) => s.showNowcast);
+  const radarSource       = useAppStore((s) => s.radarSource);
+  const openmeteoDomain   = useAppStore((s) => s.openmeteoDomain);
 
   const animTimerRef = useRef(null);
   // Cache the full unfiltered frame list so showNowcast changes don't re-fetch
@@ -23,7 +26,10 @@ export function useRadar() {
   // doesn't recreate this and trigger a second fetch.
   const loadFrames = useCallback(async (signal) => {
     try {
-      const allFrames = await fetchRadarFrames(signal);
+      const { radarSource: source, openmeteoDomain: domain } = useAppStore.getState();
+      const allFrames = source === 'openmeteo'
+        ? await fetchOpenMeteoRadarFrames(signal, domain)
+        : await fetchRadarFrames(signal);
       allFramesRef.current = allFrames;
       const { showNowcast: showNow, setRadarFrames: setFrames } = useAppStore.getState();
       const frames = showNow ? allFrames : allFrames.filter((f) => f.type === 'past');
@@ -46,7 +52,7 @@ export function useRadar() {
       controller.abort();
       clearInterval(interval);
     };
-  }, [loadFrames]);
+  }, [loadFrames, radarSource, openmeteoDomain]);
 
   // When showNowcast toggles in settings, re-filter cached frames without re-fetching
   useEffect(() => {

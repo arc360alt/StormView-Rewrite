@@ -10,6 +10,7 @@ import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
 import { WhatsNewModal } from './components/WhatsNewModal/WhatsNewModal';
 import { BetaModal } from './components/BetaModal/BetaModal';
 import { Spinner } from './components/ui/Spinner';
+import { MobileApp } from './mobile/MobileApp';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
 import { useIsMobile } from './hooks/useIsMobile';
@@ -49,12 +50,16 @@ export default function App() {
   useTheme();
   const isMobile = useIsMobile();
 
-  const location        = useAppStore((s) => s.location);
-  const settingsOpen    = useAppStore((s) => s.settingsOpen);
-  const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
-  const setSettingsTab  = useAppStore((s) => s.setSettingsTab);
-  const setLocation     = useAppStore((s) => s.setLocation);
-  const mapLayer        = useAppStore((s) => s.mapLayer);
+  const location         = useAppStore((s) => s.location);
+  const settingsOpen     = useAppStore((s) => s.settingsOpen);
+  const setSettingsOpen  = useAppStore((s) => s.setSettingsOpen);
+  const setSettingsTab   = useAppStore((s) => s.setSettingsTab);
+  const setLocation      = useAppStore((s) => s.setLocation);
+  const mapLayer         = useAppStore((s) => s.mapLayer);
+  const newMobileLayout  = useAppStore((s) => s.newMobileLayout);
+
+  // Dedicated mobile weather page — opt-out via Display settings
+  const useMobileLayout = isMobile && newMobileLayout;
 
   const [showGeoModal, setShowGeoModal] = useState(false);
   const [weatherSheetOpen, setWeatherSheetOpen] = useState(false);
@@ -78,66 +83,82 @@ export default function App() {
   const { data: weatherData, loading: weatherLoading, error: weatherError, refetch } = useWeather();
   const pushNotifications = usePushNotifications();
 
-  // Close bottom sheet when switching to desktop
+  // Close the classic bottom sheet whenever it can't be shown
   useEffect(() => {
-    if (!isMobile) setWeatherSheetOpen(false);
-  }, [isMobile]);
+    if (!isMobile || useMobileLayout) setWeatherSheetOpen(false);
+  }, [isMobile, useMobileLayout]);
 
   return (
     <div className="app">
-      <MapView />
-
-      {/* Desktop: full sidebar */}
-      {!isMobile && (
-        <WeatherSidebar
+      {useMobileLayout ? (
+        /* Dedicated mobile experience — a separate scrollable weather page */
+        <MobileApp
           weatherData={weatherData}
           loading={weatherLoading}
           error={weatherError}
           onRefresh={refetch}
         />
+      ) : (
+        <>
+          <MapView />
+
+          {/* Desktop: full sidebar */}
+          {!isMobile && (
+            <WeatherSidebar
+              weatherData={weatherData}
+              loading={weatherLoading}
+              error={weatherError}
+              onRefresh={refetch}
+            />
+          )}
+
+          {/* Bottom stack: weather button (mobile) stacked above radar scrubber */}
+          <div className={`app-bottom-stack${isMobile ? ' app-bottom-stack--mobile' : ''}`}>
+            {isMobile && (
+              <MobileWeatherBtn
+                weatherData={weatherData}
+                loading={weatherLoading}
+                open={weatherSheetOpen}
+                onClick={() => setWeatherSheetOpen((v) => !v)}
+              />
+            )}
+            {mapLayer === 'radar' && <RadarScrubber isMobile={isMobile} />}
+          </div>
+
+          {/* Mobile: sliding bottom sheet */}
+          {isMobile && (
+            <WeatherBottomSheet
+              weatherData={weatherData}
+              loading={weatherLoading}
+              error={weatherError}
+              onRefresh={refetch}
+              open={weatherSheetOpen}
+              onClose={() => setWeatherSheetOpen(false)}
+            />
+          )}
+        </>
       )}
 
-      {/* Top-right corner: beta chip + settings gear */}
-      <div className="app-top-corner">
-        <button
-          className="app-beta-chip"
-          onClick={() => setShowBetaModal(true)}
-          title="StormView is in beta"
-        >
-          BETA
-        </button>
-        <button
-          className={`app-settings-btn ${settingsOpen ? 'app-settings-btn--active' : ''}`}
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          title="Settings"
-        >
-          <Settings size={18} strokeWidth={1.8} />
-        </button>
-      </div>
-
-      {/* Bottom stack: weather button (mobile) stacked above radar scrubber */}
-      <div className={`app-bottom-stack${isMobile ? ' app-bottom-stack--mobile' : ''}`}>
-        {isMobile && (
-          <MobileWeatherBtn
-            weatherData={weatherData}
-            loading={weatherLoading}
-            open={weatherSheetOpen}
-            onClick={() => setWeatherSheetOpen((v) => !v)}
-          />
-        )}
-        {mapLayer === 'radar' && <RadarScrubber isMobile={isMobile} />}
-      </div>
-
-      {/* Mobile: sliding bottom sheet */}
-      {isMobile && (
-        <WeatherBottomSheet
-          weatherData={weatherData}
-          loading={weatherLoading}
-          error={weatherError}
-          onRefresh={refetch}
-          open={weatherSheetOpen}
-          onClose={() => setWeatherSheetOpen(false)}
-        />
+      {/* Top-right corner: beta chip + settings gear.
+          The new mobile layout renders its own settings controls (a header
+          button on the home screen, the glass gear on the radar overlay). */}
+      {!useMobileLayout && (
+        <div className="app-top-corner">
+          <button
+            className="app-beta-chip"
+            onClick={() => setShowBetaModal(true)}
+            title="StormView is in beta"
+          >
+            BETA
+          </button>
+          <button
+            className={`app-settings-btn ${settingsOpen ? 'app-settings-btn--active' : ''}`}
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            title="Settings"
+          >
+            <Settings size={18} strokeWidth={1.8} />
+          </button>
+        </div>
       )}
 
       {/* Settings panel */}

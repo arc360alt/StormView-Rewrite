@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { X, Wind, Layers, BarChart3, Activity } from 'lucide-react';
+import { X, Wind, Layers, Radar, Activity } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import './WhatsNewModal.css';
 
 // ─── DEVELOPER: bump version to re-show for all users; set name for this release ─
-export const WHATS_NEW_VERSION = '3.4.0';
-export const WHATS_NEW_NAME    = 'NWS Warnings & Other stuff';
+export const WHATS_NEW_VERSION = '3.5.0';
+export const WHATS_NEW_NAME    = 'New mobile interface';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -13,15 +13,22 @@ const FEATURES = [
     icon: Layers,
     color: '#22c55e',
     bg: 'rgba(34,197,94,0.12)',
-    title: 'Weather Map Issues',
-    desc: 'Our map provider (not the radar) started requiering an API key, switched to use another service.',
+    title: 'New Mobile Layout',
+    desc: 'Completly remade mobile interface for a better user experience.',
   },
   {
     icon: Wind,
     color: '#f59e0b',
     bg: 'rgba(245,158,11,0.12)',
-    title: 'Storm Arrows',
-    desc: 'A new setting that allows you to enable little visual arrows that show you where a storm is going.',
+    title: 'Hourly Info Panel',
+    desc: 'Adds a new panel that shows up when you click on one of the hours under the hourly section that gives you more weather info about that specific hour.',
+  },
+  {
+    icon: Radar,
+    color: '#38bdf8',
+    bg: 'rgba(56,189,248,0.12)',
+    title: 'Open-Meteo Radar',
+    desc: 'A new radar source you can pick in Settings → Radar. Global model data rendered right in your browser — very fast, with a dropdown to switch between precipitation, temperature, clouds, wind and dozens of other layers.',
   },
   {
     icon: Activity,
