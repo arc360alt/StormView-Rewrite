@@ -47,9 +47,14 @@ const fmtModelRun = (d) =>
 const fmtValidTime = (d) =>
   `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
 
-/** Fully-resolved `om://` URL for one frame + variable. */
-export function buildOmUrl(domain, run, valid, variable = 'precipitation') {
-  return `om://${BASE}/${domainSlug(domain)}/${run}/${valid}.om?variable=${variable}`;
+/**
+ * Fully-resolved `om://` URL for one frame + variable.
+ * `dark: true` selects the dark-background colour ramp — matches what
+ * maps.open-meteo.com sends when its own basemap is dark.
+ */
+export function buildOmUrl(domain, run, valid, variable = 'precipitation', { dark = false } = {}) {
+  const q = dark ? '&dark=true' : '';
+  return `om://${BASE}/${domainSlug(domain)}/${run}/${valid}.om?variable=${variable}${q}`;
 }
 
 // latest.json is small and rotates every few hours — cache per domain briefly
