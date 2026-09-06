@@ -10,6 +10,7 @@ const useAppStore = create(
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
       newMobileLayout: true,   // use the dedicated mobile weather page on phones
+      watchRoundDisplay: false, // watch mode: optimise layout for a circular screen
       radarSource: 'openmeteo', // 'stormcast' (LibreWXR) | 'openmeteo' (Open-Meteo maps)
       openmeteoDomain: 'ncep_gfs013',        // which Open-Meteo weather model
       openmeteoVariable: 'precipitation', // which Open-Meteo map layer to render
@@ -46,6 +47,7 @@ const useAppStore = create(
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
       setNewMobileLayout: (v) => set({ newMobileLayout: v }),
+      setWatchRoundDisplay: (v) => set({ watchRoundDisplay: v }),
       setRadarSource: (v) => set({ radarSource: v }),
       setOpenmeteoDomain: (v) => set({ openmeteoDomain: v }),
       setOpenmeteoVariable: (v) => set({ openmeteoVariable: v }),
@@ -116,6 +118,7 @@ const useAppStore = create(
         units: s.units,
         sidebarPosition: s.sidebarPosition,
         newMobileLayout: s.newMobileLayout,
+        watchRoundDisplay: s.watchRoundDisplay,
         radarSource: s.radarSource,
         openmeteoDomain: s.openmeteoDomain,
         openmeteoVariable: s.openmeteoVariable,

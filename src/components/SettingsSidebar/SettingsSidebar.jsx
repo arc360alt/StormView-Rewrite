@@ -4,6 +4,7 @@ import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import { fetchOpenMeteoLayers, DOMAINS } from '../../services/openmeteoRadar';
+import { useIsWatch } from '../../hooks/useIsWatch';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
 
@@ -138,12 +139,15 @@ function APITab() {
 }
 
 function DisplayTab() {
+  const isWatch = useIsWatch();
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
   const sidebarPosition = useAppStore((s) => s.sidebarPosition);
   const setSidebarPosition = useAppStore((s) => s.setSidebarPosition);
   const newMobileLayout = useAppStore((s) => s.newMobileLayout);
   const setNewMobileLayout = useAppStore((s) => s.setNewMobileLayout);
+  const watchRoundDisplay = useAppStore((s) => s.watchRoundDisplay);
+  const setWatchRoundDisplay = useAppStore((s) => s.setWatchRoundDisplay);
 
   return (
     <>
@@ -186,6 +190,19 @@ function DisplayTab() {
           </div>
           <Toggle checked={newMobileLayout} onChange={setNewMobileLayout} />
         </div>
+
+        {isWatch && (
+          <div className="settings-row" style={{ marginTop: 6 }}>
+            <div>
+              <div className="settings-row-label">Round Display</div>
+              <div className="settings-row-sub">
+                Pad the layout to fit a circular watch screen so nothing is
+                clipped at the corners.
+              </div>
+            </div>
+            <Toggle checked={watchRoundDisplay} onChange={setWatchRoundDisplay} />
+          </div>
+        )}
       </div>
     </>
   );

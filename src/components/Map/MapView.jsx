@@ -79,13 +79,13 @@ function SatelliteLayer() {
 }
 
 /** Inner component to sync map state */
-function MapController({ location, theme, mapRef, onContextMenu }) {
+function MapController({ location, theme, mapRef, onContextMenu, onMap }) {
   const map = useMap();
   const tileLayerRef = useRef(null);
   const setMapZoom = useAppStore((s) => s.setMapZoom);
 
   // Expose map instance to parent
-  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
+  useEffect(() => { mapRef.current = map; onMap?.(map); }, [map, mapRef, onMap]);
 
   useMapEvents({
     zoomend: () => setMapZoom(map.getZoom()),
@@ -128,7 +128,7 @@ function MapController({ location, theme, mapRef, onContextMenu }) {
   return null;
 }
 
-export function MapView() {
+export function MapView({ onMap }) {
   const location    = useAppStore((s) => s.location);
   const mapZoom     = useAppStore((s) => s.mapZoom);
   const mapLayer    = useAppStore((s) => s.mapLayer);
@@ -154,6 +154,7 @@ export function MapView() {
           location={location}
           theme={theme}
           mapRef={mapRef}
+          onMap={onMap}
           onContextMenu={setMenu}
         />
         <SatelliteLayer />
