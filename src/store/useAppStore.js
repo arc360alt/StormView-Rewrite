@@ -12,7 +12,7 @@ const useAppStore = create(
       newMobileLayout: true,   // use the dedicated mobile weather page on phones
       watchRoundDisplay: false, // watch mode: optimise layout for a circular screen
       radarSource: 'openmeteo', // 'stormcast' (LibreWXR) | 'openmeteo' (Open-Meteo maps)
-      openmeteoDomain: 'ncep_gfs013',        // which Open-Meteo weather model
+      openmeteoDomain: 'ncep_hrrr_conus',        // which Open-Meteo weather model
       openmeteoVariable: 'precipitation', // which Open-Meteo map layer to render
       radarOpacity: 0.75,
       radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)

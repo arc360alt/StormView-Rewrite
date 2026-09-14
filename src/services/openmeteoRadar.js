@@ -27,7 +27,7 @@ export const DOMAINS = [
   { value: 'ncep_hrrr_conus',   label: 'GFS HRRR Conus',    scope: 'US' },
 ];
 
-export const DEFAULT_DOMAIN = 'ncep_gfs013';
+export const DEFAULT_DOMAIN = 'ncep_hrrr_conus';
 
 function domainSlug(domain) {
   return DOMAINS.some((d) => d.value === domain) ? domain : DEFAULT_DOMAIN;
