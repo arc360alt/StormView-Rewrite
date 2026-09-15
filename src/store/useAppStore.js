@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DEFAULT_WIDGETS } from '../components/widgets/defaults';
+import { DEFAULT_WIDGETS, DEFAULT_DETAILS_FIELDS } from '../components/widgets/defaults';
 import { DEFAULT_MODEL } from '../services/webllm';
 
 const DEFAULT_CUSTOM_THEME = {
@@ -21,6 +21,8 @@ const useAppStore = create(
       theme: 'light',           // 'dark' | 'light' | 'system' | 'ocean' | 'sunset' | 'forest' | 'crimson' | 'custom'
       customTheme: DEFAULT_CUSTOM_THEME,
       widgets: DEFAULT_WIDGETS, // [{ id, enabled }] — order + visibility of optional home-screen sections
+      detailsFields: DEFAULT_DETAILS_FIELDS, // { fieldKey: enabled } — which info cards show in the Weather Details widget
+      aqiShowPollutants: true, // Air Quality widget: show the PM2.5/PM10/etc breakdown
       assistantModel: DEFAULT_MODEL, // which WebLLM model the weather assistant loads
       weatherAPI: 'openmeteo', // 'nws' | 'openmeteo'
       units: 'imperial',       // 'imperial' | 'metric'
@@ -72,6 +74,10 @@ const useAppStore = create(
         [widgets[idx], widgets[next]] = [widgets[next], widgets[idx]];
         return { widgets };
       }),
+      setDetailsField: (key, enabled) => set((s) => ({
+        detailsFields: { ...s.detailsFields, [key]: enabled },
+      })),
+      setAqiShowPollutants: (v) => set({ aqiShowPollutants: v }),
       setWeatherAPI: (api) => set({ weatherAPI: api }),
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
@@ -140,11 +146,29 @@ const useAppStore = create(
       migrate: (state) => state,
       // Explicit merge: spread defaults first so any new keys added to the store
       // always have a valid initial value even when loading older stored data.
-      merge: (persisted, current) => ({ ...current, ...persisted }),
+      merge: (persisted, current) => {
+        const merged = { ...current, ...persisted };
+        // `widgets` is an array, so the generic spread above takes the user's
+        // saved list wholesale — any widget id added to DEFAULT_WIDGETS after
+        // they last saved would otherwise never appear. Reconcile: keep the
+        // user's saved order/enabled state for ids that still exist, append
+        // newly-added ids (with their default enabled state) at the end, and
+        // drop ids that no longer exist.
+        if (persisted?.widgets) {
+          const stillValid = persisted.widgets.filter((w) =>
+            DEFAULT_WIDGETS.some((d) => d.id === w.id));
+          const validIds = new Set(stillValid.map((w) => w.id));
+          const newOnes = DEFAULT_WIDGETS.filter((d) => !validIds.has(d.id));
+          merged.widgets = [...stillValid, ...newOnes];
+        }
+        return merged;
+      },
       partialize: (s) => ({
         theme: s.theme,
         customTheme: s.customTheme,
         widgets: s.widgets,
+        detailsFields: s.detailsFields,
+        aqiShowPollutants: s.aqiShowPollutants,
         assistantModel: s.assistantModel,
         weatherAPI: s.weatherAPI,
         units: s.units,

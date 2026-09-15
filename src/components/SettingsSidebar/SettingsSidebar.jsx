@@ -4,7 +4,7 @@ import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import { fetchOpenMeteoLayers, DOMAINS } from '../../services/openmeteoRadar';
-import { WIDGET_REGISTRY } from '../widgets/registry';
+import { WIDGET_REGISTRY, DETAILS_FIELD_LABELS } from '../widgets/registry';
 import { THEME_PRESETS, PRESET_PREVIEW } from '../../utils/themeColor';
 import { useIsWatch } from '../../hooks/useIsWatch';
 import useAppStore from '../../store/useAppStore';
@@ -288,42 +288,83 @@ function WidgetsTab() {
   const widgets = useAppStore((s) => s.widgets);
   const setWidgetEnabled = useAppStore((s) => s.setWidgetEnabled);
   const moveWidget = useAppStore((s) => s.moveWidget);
+  const detailsFields = useAppStore((s) => s.detailsFields);
+  const setDetailsField = useAppStore((s) => s.setDetailsField);
+  const aqiShowPollutants = useAppStore((s) => s.aqiShowPollutants);
+  const setAqiShowPollutants = useAppStore((s) => s.setAqiShowPollutants);
+
+  const detailsEnabled = widgets.find((w) => w.id === 'details')?.enabled;
+  const aqiEnabled = widgets.find((w) => w.id === 'aqi')?.enabled;
 
   return (
-    <div className="settings-group">
-      <div className="settings-group-label">Home Screen Sections</div>
-      <div className="settings-row-sub" style={{ marginBottom: 10 }}>
-        Show, hide, and reorder the sections below "Current Conditions" on your
-        homepage/sidebar. Current Conditions and the radar preview are always shown.
+    <>
+      <div className="settings-group">
+        <div className="settings-group-label">Home Screen Sections</div>
+        <div className="settings-row-sub" style={{ marginBottom: 10 }}>
+          Show, hide, and reorder the sections below "Current Conditions" on your
+          homepage/sidebar. Current Conditions and the radar preview are always shown.
+        </div>
+        {widgets.map((w, i) => (
+          <div key={w.id} className="settings-row widget-row">
+            <Toggle
+              checked={w.enabled}
+              onChange={(v) => setWidgetEnabled(w.id, v)}
+              label={WIDGET_REGISTRY[w.id]?.label ?? w.id}
+            />
+            <div className="widget-row-controls">
+              <button
+                className="widget-row-btn"
+                disabled={i === 0}
+                onClick={() => moveWidget(w.id, -1)}
+                aria-label="Move up"
+              >
+                <ChevronUp size={14} strokeWidth={2} />
+              </button>
+              <button
+                className="widget-row-btn"
+                disabled={i === widgets.length - 1}
+                onClick={() => moveWidget(w.id, 1)}
+                aria-label="Move down"
+              >
+                <ChevronDown size={14} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-      {widgets.map((w, i) => (
-        <div key={w.id} className="settings-row widget-row">
-          <Toggle
-            checked={w.enabled}
-            onChange={(v) => setWidgetEnabled(w.id, v)}
-            label={WIDGET_REGISTRY[w.id]?.label ?? w.id}
-          />
-          <div className="widget-row-controls">
-            <button
-              className="widget-row-btn"
-              disabled={i === 0}
-              onClick={() => moveWidget(w.id, -1)}
-              aria-label="Move up"
-            >
-              <ChevronUp size={14} strokeWidth={2} />
-            </button>
-            <button
-              className="widget-row-btn"
-              disabled={i === widgets.length - 1}
-              onClick={() => moveWidget(w.id, 1)}
-              aria-label="Move down"
-            >
-              <ChevronDown size={14} strokeWidth={2} />
-            </button>
+
+      {detailsEnabled && (
+        <div className="settings-group">
+          <div className="settings-group-label">Weather Details — Fields</div>
+          <div className="settings-row-sub" style={{ marginBottom: 10 }}>
+            Hide any of these info cards you don't need from the Weather Details section.
+          </div>
+          <div className="widget-fields-grid">
+            {Object.entries(DETAILS_FIELD_LABELS).map(([key, label]) => (
+              <Toggle
+                key={key}
+                checked={detailsFields?.[key] !== false}
+                onChange={(v) => setDetailsField(key, v)}
+                label={label}
+              />
+            ))}
           </div>
         </div>
-      ))}
-    </div>
+      )}
+
+      {aqiEnabled && (
+        <div className="settings-group">
+          <div className="settings-group-label">Air Quality Widget</div>
+          <div className="settings-row">
+            <Toggle
+              checked={aqiShowPollutants}
+              onChange={setAqiShowPollutants}
+              label="Show Pollutant Breakdown"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

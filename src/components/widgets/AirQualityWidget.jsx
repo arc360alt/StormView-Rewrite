@@ -1,5 +1,6 @@
 import { Activity } from 'lucide-react';
 import { getAqiCategory } from '../../services/airquality';
+import useAppStore from '../../store/useAppStore';
 import './widgets.css';
 
 const POLLUTANTS = [
@@ -10,6 +11,7 @@ const POLLUTANTS = [
 ];
 
 export function AirQualityWidget({ data }) {
+  const showPollutants = useAppStore((s) => s.aqiShowPollutants);
   const aq = data.airQuality;
   if (aq?.us_aqi == null) return null;
 
@@ -40,16 +42,18 @@ export function AirQualityWidget({ data }) {
 
       {category?.desc && <div className="widget-aqi-desc">{category.desc}</div>}
 
-      <div className="widget-aqi-pollutants">
-        {POLLUTANTS.filter((p) => aq[p.key] != null).map((p) => (
-          <div key={p.key} className="widget-aqi-pollutant">
-            <span className="widget-aqi-pollutant-label">{p.label}</span>
-            <span className="widget-aqi-pollutant-value">
-              {Math.round(aq[p.key])} <span className="widget-aqi-pollutant-unit">{p.unit}</span>
-            </span>
-          </div>
-        ))}
-      </div>
+      {showPollutants && (
+        <div className="widget-aqi-pollutants">
+          {POLLUTANTS.filter((p) => aq[p.key] != null).map((p) => (
+            <div key={p.key} className="widget-aqi-pollutant">
+              <span className="widget-aqi-pollutant-label">{p.label}</span>
+              <span className="widget-aqi-pollutant-value">
+                {Math.round(aq[p.key])} <span className="widget-aqi-pollutant-unit">{p.unit}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

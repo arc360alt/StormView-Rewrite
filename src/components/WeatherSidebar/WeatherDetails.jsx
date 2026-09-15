@@ -33,6 +33,7 @@ function windDirLabel(deg) {
 
 export function WeatherDetails({ data }) {
   const units = useAppStore((s) => s.units);
+  const detailsFields = useAppStore((s) => s.detailsFields);
   const cu = data.current;
   const aq = data.airQuality ?? {};
 
@@ -45,12 +46,14 @@ export function WeatherDetails({ data }) {
 
   const items = [
     {
+      key: 'humidity',
       icon: <Droplets size={15} strokeWidth={1.8} />,
       label: 'Humidity',
       value: cu.humidity != null ? `${cu.humidity}%` : '—',
       color: '#60A5FA',
     },
     {
+      key: 'wind',
       icon: <Wind size={15} strokeWidth={1.8} />,
       label: 'Wind',
       value: cu.windSpeed != null ? `${windDir} ${cu.windSpeed} ${speedUnit}` : '—',
@@ -58,24 +61,28 @@ export function WeatherDetails({ data }) {
       color: '#94A3B8',
     },
     {
+      key: 'visibility',
       icon: <Eye size={15} strokeWidth={1.8} />,
       label: 'Visibility',
       value: cu.visibility != null ? `${cu.visibility} ${distUnit}` : '—',
       color: '#A78BFA',
     },
     {
+      key: 'pressure',
       icon: <Gauge size={15} strokeWidth={1.8} />,
       label: 'Pressure',
       value: cu.pressure != null ? `${cu.pressure} hPa` : '—',
       color: '#34D399',
     },
     {
+      key: 'dewPoint',
       icon: <Thermometer size={15} strokeWidth={1.8} />,
       label: 'Dew Point',
       value: cu.dewPoint != null ? `${cu.dewPoint}${tempUnit}` : '—',
       color: '#6EE7B7',
     },
     {
+      key: 'uvIndex',
       icon: <Sun size={15} strokeWidth={1.8} />,
       label: 'UV Index',
       value: uv.label,
@@ -83,12 +90,14 @@ export function WeatherDetails({ data }) {
       color: '#FBBF24',
     },
     {
+      key: 'cloudCover',
       icon: <Cloud size={15} strokeWidth={1.8} />,
       label: 'Cloud Cover',
       value: cu.cloudCover != null ? `${cu.cloudCover}%` : '—',
       color: '#94A3B8',
     },
     {
+      key: 'precip',
       icon: <ArrowUp size={15} strokeWidth={1.8} />,
       label: 'Precip.',
       value: cu.precipitation != null
@@ -97,6 +106,7 @@ export function WeatherDetails({ data }) {
       color: '#60A5FA',
     },
     aq.us_aqi != null ? {
+      key: 'aqi',
       icon: <Activity size={15} strokeWidth={1.8} />,
       label: 'Air Quality',
       value: aqi.label,
@@ -104,7 +114,10 @@ export function WeatherDetails({ data }) {
       color: '#94A3B8',
       sub: '',
     } : null,
-  ].filter(Boolean).filter((i) => i.value !== '—' || i.label === 'Humidity' || i.label === 'UV Index');
+  ]
+    .filter(Boolean)
+    .filter((i) => detailsFields?.[i.key] !== false)
+    .filter((i) => i.value !== '—' || i.label === 'Humidity' || i.label === 'UV Index');
 
   return (
     <div className="weather-details sidebar-section">
