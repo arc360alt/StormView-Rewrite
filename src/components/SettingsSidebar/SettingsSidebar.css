@@ -153,6 +153,18 @@
   width: 100%;
 }
 
+.widget-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 10px;
+}
+.widget-fields-grid .toggle-wrap {
+  padding: 8px 10px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
 .widget-row-controls {
   display: flex;
   gap: 4px;

@@ -5,6 +5,12 @@ import { WeatherDetails } from '../WeatherSidebar/WeatherDetails';
 import { SunriseSunset } from './SunriseSunset';
 import { AirQualityWidget } from './AirQualityWidget';
 import { WindCompass } from './WindCompass';
+import { FeelsLike } from './FeelsLike';
+import { PrecipOutlook } from './PrecipOutlook';
+import { Daylight } from './Daylight';
+import { UVIndexWidget } from './UVIndexWidget';
+import { MoonPhase } from './MoonPhase';
+import { TodaysOutlook } from './TodaysOutlook';
 import { WIDGET_LABELS } from './defaults';
 
 /**
@@ -21,6 +27,12 @@ export const WIDGET_REGISTRY = {
   details: { label: WIDGET_LABELS.details, Component: WeatherDetails },
   aqi: { label: WIDGET_LABELS.aqi, Component: AirQualityWidget },
   windCompass: { label: WIDGET_LABELS.windCompass, Component: WindCompass },
+  feelsLike: { label: WIDGET_LABELS.feelsLike, Component: FeelsLike },
+  precipOutlook: { label: WIDGET_LABELS.precipOutlook, Component: PrecipOutlook },
+  daylight: { label: WIDGET_LABELS.daylight, Component: Daylight },
+  uvIndex: { label: WIDGET_LABELS.uvIndex, Component: UVIndexWidget },
+  moonPhase: { label: WIDGET_LABELS.moonPhase, Component: MoonPhase },
+  outlook: { label: WIDGET_LABELS.outlook, Component: TodaysOutlook },
 };
 
-export { DEFAULT_WIDGETS } from './defaults';
+export { DEFAULT_WIDGETS, DETAILS_FIELD_LABELS, DEFAULT_DETAILS_FIELDS } from './defaults';
