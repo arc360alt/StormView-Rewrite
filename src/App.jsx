@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Settings, MapPin, Navigation } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { WeatherSidebar } from './components/WeatherSidebar/WeatherSidebar';
@@ -10,6 +10,9 @@ import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
 import { WhatsNewModal } from './components/WhatsNewModal/WhatsNewModal';
 import { BetaModal } from './components/BetaModal/BetaModal';
 import { Spinner } from './components/ui/Spinner';
+const WeatherAssistant = lazy(() =>
+  import('./components/WeatherAssistant/WeatherAssistant').then((m) => ({ default: m.WeatherAssistant }))
+);
 import { MobileApp } from './mobile/MobileApp';
 import { WatchApp } from './watch/WatchApp';
 import { useWeather } from './hooks/useWeather';
@@ -186,6 +189,13 @@ export default function App() {
 
       {/* Beta info modal */}
       {showBetaModal && <BetaModal onClose={() => setShowBetaModal(false)} />}
+
+      {/* On-device weather assistant (WebLLM) — lazy-loaded, not shown on watch */}
+      {!isWatch && (
+        <Suspense fallback={null}>
+          <WeatherAssistant weatherData={weatherData} />
+        </Suspense>
+      )}
 
       {/* First-launch geo modal */}
       {showGeoModal && (

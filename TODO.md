@@ -1,1 +1,3 @@
 - Add a widgets feature on the sidebar/homepage that lets you add or remove premade sections to your weather sidebar/homepage.
+- More color themes (and custom color themes)
+- Intigrate WebLLM and make it a weather assistant that has all of the weather data the rest of the storm view website fetches (https://github.com/mlc-ai/web-llm)

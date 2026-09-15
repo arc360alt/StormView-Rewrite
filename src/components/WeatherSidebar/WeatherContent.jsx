@@ -1,9 +1,7 @@
 import { AlertCircle, MapPin } from 'lucide-react';
 import { CurrentConditions } from './CurrentConditions';
-import { WeatherDetails } from './WeatherDetails';
-import { WeatherAlerts } from './WeatherAlerts';
-import { HourlyForecast } from './HourlyForecast';
-import { DailyForecast } from './DailyForecast';
+import { WIDGET_REGISTRY } from '../widgets/registry';
+import { useOrderedWidgets } from '../../hooks/useOrderedWidgets';
 import useAppStore from '../../store/useAppStore';
 
 function SkeletonLoading() {
@@ -25,6 +23,8 @@ function SkeletonLoading() {
  * and WeatherBottomSheet (mobile).
  */
 export function WeatherContent({ weatherData, loading, error, onOpenSettings }) {
+  const orderedWidgets = useOrderedWidgets();
+
   if (loading && !weatherData) return <SkeletonLoading />;
 
   if (error && !weatherData) {
@@ -60,10 +60,12 @@ export function WeatherContent({ weatherData, loading, error, onOpenSettings }) 
     <>
       {error && <div className="sidebar-notice">{error}</div>}
       <CurrentConditions data={weatherData} />
-      <WeatherAlerts alerts={weatherData.alerts} />
-      <HourlyForecast data={weatherData} />
-      <DailyForecast data={weatherData} />
-      <WeatherDetails data={weatherData} />
+      {orderedWidgets.map((id) => {
+        const { Component, alertsProp } = WIDGET_REGISTRY[id];
+        return alertsProp
+          ? <Component key={id} alerts={weatherData.alerts} />
+          : <Component key={id} data={weatherData} />;
+      })}
     </>
   );
 }

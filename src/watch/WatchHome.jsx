@@ -3,10 +3,8 @@ import { MapPin, RefreshCw, AlertCircle, Settings } from 'lucide-react';
 import { MobileCurrent } from '../mobile/MobileCurrent';
 import { MobileRadarPreview } from '../mobile/MobileRadarPreview';
 import { AlertBanner } from '../components/WeatherSidebar/AlertBanner';
-import { WeatherAlerts } from '../components/WeatherSidebar/WeatherAlerts';
-import { HourlyForecast } from '../components/WeatherSidebar/HourlyForecast';
-import { DailyForecast } from '../components/WeatherSidebar/DailyForecast';
-import { WeatherDetails } from '../components/WeatherSidebar/WeatherDetails';
+import { WIDGET_REGISTRY } from '../components/widgets/registry';
+import { useOrderedWidgets } from '../hooks/useOrderedWidgets';
 import { Spinner } from '../components/ui/Spinner';
 import { useNwsAlerts } from '../hooks/useNwsAlerts';
 import useAppStore from '../store/useAppStore';
@@ -25,6 +23,7 @@ export function WatchHome({ weatherData, loading, error, onRefresh, onOpenRadar 
   const round = useAppStore((s) => s.watchRoundDisplay);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
+  const orderedWidgets = useOrderedWidgets();
 
   const openLocationSettings = () => {
     setSettingsTab('location');
@@ -114,21 +113,18 @@ export function WatchHome({ weatherData, loading, error, onRefresh, onOpenRadar 
 
           <MobileCurrent data={weatherData} />
 
-          <WeatherAlerts alerts={weatherData.alerts} />
-
-          <div className="w-card">
-            <HourlyForecast data={weatherData} />
-          </div>
-
-          <div className="w-card">
-            <DailyForecast data={weatherData} />
-          </div>
-
           <MobileRadarPreview onOpen={() => { tick(); onOpenRadar(); }} />
 
-          <div className="w-card">
-            <WeatherDetails data={weatherData} />
-          </div>
+          {orderedWidgets.map((id) => {
+            const { Component, alertsProp } = WIDGET_REGISTRY[id];
+            return alertsProp ? (
+              <Component key={id} alerts={weatherData.alerts} />
+            ) : (
+              <div key={id} className="w-card">
+                <Component data={weatherData} />
+              </div>
+            );
+          })}
 
           <div className="w-foot">StormView</div>
         </div>

@@ -1,0 +1,211 @@
+.wa-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 900;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.wa-fab:hover { transform: scale(1.06); }
+.wa-fab--active { background: var(--surface-elevated); color: var(--text-primary); }
+/* Clears the bottom-center radar scrubber / weather button stack, which can
+   span nearly the full viewport width on phones. */
+.wa-fab--mobile { bottom: 108px; }
+
+.wa-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 76px;
+  z-index: 900;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  height: 440px;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.wa-panel--mobile { bottom: 164px; }
+
+.wa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wa-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.wa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wa-model-select {
+  font-size: 10.5px;
+  max-width: 110px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  padding: 3px 4px;
+}
+.wa-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.wa-icon-btn:hover { color: var(--text-primary); background: var(--surface-active); }
+
+.wa-status {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  gap: 8px;
+}
+.wa-status-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.wa-status p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+.wa-retry-btn {
+  margin-top: 4px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.wa-progress-track {
+  width: 100%;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.wa-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.wa-progress-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.wa-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wa-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 20px;
+}
+.wa-msg {
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 8px 11px;
+  border-radius: var(--radius-md);
+  max-width: 85%;
+  white-space: pre-wrap;
+}
+.wa-msg--user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: var(--radius-xs);
+}
+.wa-msg--assistant {
+  align-self: flex-start;
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.wa-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wa-input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.wa-input:focus { outline: none; border-color: var(--accent); }
+.wa-send-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.wa-send-btn:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 480px) {
+  .wa-fab { right: 14px; }
+  .wa-fab--mobile { bottom: 100px; }
+  .wa-panel { right: 14px; left: 14px; width: auto; }
+  .wa-panel--mobile { bottom: 156px; }
+}
