@@ -1,17 +1,34 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DEFAULT_WIDGETS } from '../components/widgets/defaults';
+import { DEFAULT_MODEL } from '../services/webllm';
+
+const DEFAULT_CUSTOM_THEME = {
+  bg: '#090910',
+  surface: '#111119',
+  textPrimary: '#e8e8f2',
+  textSecondary: '#8888a8',
+  accent: '#4f8ef5',
+  warning: '#f59e0b',
+  danger: '#ef4444',
+  success: '#10b981',
+};
 
 const useAppStore = create(
   persist(
     (set, get) => ({
       // ---- Persisted settings ----
-      theme: 'light',           // 'dark' | 'light' | 'system'
+      theme: 'light',           // 'dark' | 'light' | 'system' | 'ocean' | 'sunset' | 'forest' | 'crimson' | 'custom'
+      customTheme: DEFAULT_CUSTOM_THEME,
+      widgets: DEFAULT_WIDGETS, // [{ id, enabled }] — order + visibility of optional home-screen sections
+      assistantModel: DEFAULT_MODEL, // which WebLLM model the weather assistant loads
       weatherAPI: 'openmeteo', // 'nws' | 'openmeteo'
       units: 'imperial',       // 'imperial' | 'metric'
       sidebarPosition: 'left', // 'left' | 'right'
       newMobileLayout: true,   // use the dedicated mobile weather page on phones
+      watchRoundDisplay: false, // watch mode: optimise layout for a circular screen
       radarSource: 'openmeteo', // 'stormcast' (LibreWXR) | 'openmeteo' (Open-Meteo maps)
-      openmeteoDomain: 'ncep_gfs013',        // which Open-Meteo weather model
+      openmeteoDomain: 'ncep_hrrr_conus',        // which Open-Meteo weather model
       openmeteoVariable: 'precipitation', // which Open-Meteo map layer to render
       radarOpacity: 0.75,
       radarTileQuality: 512,   // URL image size: 256 (fast, blurry) or 512 (sharp)
@@ -29,7 +46,7 @@ const useAppStore = create(
 
       // ---- Transient UI state ----
       settingsOpen: false,
-      settingsTab: 'location', // 'location' | 'api' | 'display' | 'radar'
+      settingsTab: 'location', // 'location' | 'api' | 'display' | 'widgets' | 'radar' | 'alerts'
       // { loadedTiles, totalTiles, framesLoaded, framesTotal, startTime }
       radarTileProgress: null,
       dismissedWhatsNewVersion: null, // persisted — stores the version string user dismissed
@@ -42,10 +59,24 @@ const useAppStore = create(
 
       // ---- Setters: settings ----
       setTheme: (theme) => set({ theme }),
+      setCustomTheme: (patch) => set((s) => ({ customTheme: { ...s.customTheme, ...patch } })),
+      setAssistantModel: (id) => set({ assistantModel: id }),
+      setWidgetEnabled: (id, enabled) => set((s) => ({
+        widgets: s.widgets.map((w) => (w.id === id ? { ...w, enabled } : w)),
+      })),
+      moveWidget: (id, delta) => set((s) => {
+        const idx = s.widgets.findIndex((w) => w.id === id);
+        const next = idx + delta;
+        if (idx === -1 || next < 0 || next >= s.widgets.length) return {};
+        const widgets = s.widgets.slice();
+        [widgets[idx], widgets[next]] = [widgets[next], widgets[idx]];
+        return { widgets };
+      }),
       setWeatherAPI: (api) => set({ weatherAPI: api }),
       setUnits: (units) => set({ units }),
       setSidebarPosition: (pos) => set({ sidebarPosition: pos }),
       setNewMobileLayout: (v) => set({ newMobileLayout: v }),
+      setWatchRoundDisplay: (v) => set({ watchRoundDisplay: v }),
       setRadarSource: (v) => set({ radarSource: v }),
       setOpenmeteoDomain: (v) => set({ openmeteoDomain: v }),
       setOpenmeteoVariable: (v) => set({ openmeteoVariable: v }),
@@ -112,10 +143,14 @@ const useAppStore = create(
       merge: (persisted, current) => ({ ...current, ...persisted }),
       partialize: (s) => ({
         theme: s.theme,
+        customTheme: s.customTheme,
+        widgets: s.widgets,
+        assistantModel: s.assistantModel,
         weatherAPI: s.weatherAPI,
         units: s.units,
         sidebarPosition: s.sidebarPosition,
         newMobileLayout: s.newMobileLayout,
+        watchRoundDisplay: s.watchRoundDisplay,
         radarSource: s.radarSource,
         openmeteoDomain: s.openmeteoDomain,
         openmeteoVariable: s.openmeteoVariable,

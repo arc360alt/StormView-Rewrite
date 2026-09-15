@@ -16,6 +16,9 @@ export default defineConfig({
       '@openmeteo/weather-map-layer',
       '@openmeteo/file-reader',
       '@openmeteo/file-format-wasm',
+      // Same reason as above — WebLLM loads its wasm/worker via import.meta.url,
+      // which esbuild's dep pre-bundling would also break.
+      '@mlc-ai/web-llm',
     ],
   },
 });

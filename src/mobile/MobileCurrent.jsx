@@ -1,5 +1,4 @@
-import { format } from 'date-fns';
-import { Sunrise, Sunset, Droplets, Thermometer } from 'lucide-react';
+import { Droplets, Thermometer } from 'lucide-react';
 import { WeatherIcon, getWeatherLabel } from '../components/ui/WeatherIcon';
 import useAppStore from '../store/useAppStore';
 
@@ -68,19 +67,6 @@ export function MobileCurrent({ data }) {
           </span>
         )}
       </div>
-
-      {(cu.sunrise || today?.sunrise) && (
-        <div className="m-current-sun">
-          <span className="m-current-stat">
-            <Sunrise size={13} strokeWidth={1.8} style={{ color: '#FBBF24' }} />
-            {format(cu.sunrise ?? today.sunrise, 'h:mm a')}
-          </span>
-          <span className="m-current-stat">
-            <Sunset size={13} strokeWidth={1.8} style={{ color: '#F97316' }} />
-            {format(cu.sunset ?? today.sunset, 'h:mm a')}
-          </span>
-        </div>
-      )}
     </section>
   );
 }

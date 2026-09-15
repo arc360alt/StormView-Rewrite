@@ -69,15 +69,3 @@
   color: #60A5FA;
 }
 
-.current-sun {
-  display: flex;
-  gap: 16px;
-}
-
-.sun-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}

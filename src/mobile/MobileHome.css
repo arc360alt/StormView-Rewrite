@@ -171,8 +171,7 @@
   color: var(--text-primary);
 }
 
-.m-current-stats,
-.m-current-sun {
+.m-current-stats {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -189,13 +188,6 @@
 
 .m-hilow-high { color: #F97316; font-weight: 500; margin-right: 8px; }
 .m-hilow-low  { color: #60A5FA; font-weight: 500; }
-
-.m-current-sun {
-  margin-top: 2px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  width: 100%;
-}
 
 /* ---- Loading / empty states ---- */
 .m-loading,

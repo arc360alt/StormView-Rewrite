@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { LocationSettings } from './LocationSettings';
 import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import { fetchOpenMeteoLayers, DOMAINS } from '../../services/openmeteoRadar';
+import { WIDGET_REGISTRY } from '../widgets/registry';
+import { THEME_PRESETS, PRESET_PREVIEW } from '../../utils/themeColor';
+import { useIsWatch } from '../../hooks/useIsWatch';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
 
@@ -26,6 +29,7 @@ const TABS = [
   { id: 'location', label: 'Location' },
   { id: 'api',      label: 'Weather' },
   { id: 'display',  label: 'Display' },
+  { id: 'widgets',  label: 'Widgets' },
   { id: 'radar',    label: 'Radar' },
   { id: 'alerts',   label: 'Alerts' },
 ];
@@ -137,30 +141,85 @@ function APITab() {
   );
 }
 
+const CUSTOM_COLOR_FIELDS = [
+  { key: 'bg', label: 'Background' },
+  { key: 'surface', label: 'Surface' },
+  { key: 'textPrimary', label: 'Primary Text' },
+  { key: 'textSecondary', label: 'Secondary Text' },
+  { key: 'accent', label: 'Accent' },
+  { key: 'warning', label: 'Warning' },
+  { key: 'danger', label: 'Danger' },
+  { key: 'success', label: 'Success' },
+];
+
+function ThemeSwatch({ id, label, active, preview, onClick }) {
+  return (
+    <button className={`theme-swatch ${active ? 'theme-swatch--active' : ''}`} onClick={onClick}>
+      <div
+        className="theme-swatch-preview"
+        style={preview.gradient ? { background: preview.gradient } : {
+          background: preview.bg,
+          '--swatch-accent': preview.accent,
+        }}
+      >
+        {!preview.gradient && <div className="theme-swatch-accent-dot" />}
+      </div>
+      <span className="theme-swatch-name">{label}</span>
+    </button>
+  );
+}
+
 function DisplayTab() {
+  const isWatch = useIsWatch();
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
+  const customTheme = useAppStore((s) => s.customTheme);
+  const setCustomTheme = useAppStore((s) => s.setCustomTheme);
   const sidebarPosition = useAppStore((s) => s.sidebarPosition);
   const setSidebarPosition = useAppStore((s) => s.setSidebarPosition);
   const newMobileLayout = useAppStore((s) => s.newMobileLayout);
   const setNewMobileLayout = useAppStore((s) => s.setNewMobileLayout);
+  const watchRoundDisplay = useAppStore((s) => s.watchRoundDisplay);
+  const setWatchRoundDisplay = useAppStore((s) => s.setWatchRoundDisplay);
 
   return (
     <>
       <div className="settings-group">
         <div className="settings-group-label">Theme</div>
-        <div className="settings-row">
-          <div className="settings-row-label">Color Mode</div>
-          <SegControl
-            options={[
-              { label: 'Dark', value: 'dark' },
-              { label: 'Light', value: 'light' },
-              { label: 'System', value: 'system' },
-            ]}
-            value={theme}
-            onChange={setTheme}
-          />
+        <div className="theme-swatch-grid">
+          {THEME_PRESETS.map((p) => {
+            const preview = p.id === 'system'
+              ? { gradient: 'linear-gradient(90deg, #090910 50%, #e8edf5 50%)' }
+              : p.id === 'custom'
+                ? { bg: customTheme.bg, accent: customTheme.accent }
+                : PRESET_PREVIEW[p.id];
+            return (
+              <ThemeSwatch
+                key={p.id}
+                id={p.id}
+                label={p.label}
+                active={theme === p.id}
+                preview={preview}
+                onClick={() => setTheme(p.id)}
+              />
+            );
+          })}
         </div>
+
+        {theme === 'custom' && (
+          <div className="custom-theme-picker">
+            {CUSTOM_COLOR_FIELDS.map((f) => (
+              <label key={f.key} className="custom-theme-field">
+                <span>{f.label}</span>
+                <input
+                  type="color"
+                  value={customTheme[f.key]}
+                  onChange={(e) => setCustomTheme({ [f.key]: e.target.value })}
+                />
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="settings-group">
@@ -186,8 +245,85 @@ function DisplayTab() {
           </div>
           <Toggle checked={newMobileLayout} onChange={setNewMobileLayout} />
         </div>
+
+        {isWatch && (
+          <div className="settings-row" style={{ marginTop: 6 }}>
+            <div>
+              <div className="settings-row-label">Round Display</div>
+              <div className="settings-row-sub">
+                Pad the layout to fit a circular watch screen so nothing is
+                clipped at the corners.
+              </div>
+            </div>
+            <Toggle checked={watchRoundDisplay} onChange={setWatchRoundDisplay} />
+          </div>
+        )}
+      </div>
+
+      <div className="settings-group">
+        <div className="settings-group-label">Weather Assistant</div>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">Clear Downloaded AI Model</div>
+            <div className="settings-row-sub">
+              Frees the on-device model StormView's weather assistant downloaded to your browser.
+            </div>
+          </div>
+          <button
+            className="wa-clear-btn"
+            onClick={async () => {
+              const { clearModelCache } = await import('../../services/webllm');
+              clearModelCache();
+            }}
+          >
+            Clear
+          </button>
+        </div>
       </div>
     </>
+  );
+}
+
+function WidgetsTab() {
+  const widgets = useAppStore((s) => s.widgets);
+  const setWidgetEnabled = useAppStore((s) => s.setWidgetEnabled);
+  const moveWidget = useAppStore((s) => s.moveWidget);
+
+  return (
+    <div className="settings-group">
+      <div className="settings-group-label">Home Screen Sections</div>
+      <div className="settings-row-sub" style={{ marginBottom: 10 }}>
+        Show, hide, and reorder the sections below "Current Conditions" on your
+        homepage/sidebar. Current Conditions and the radar preview are always shown.
+      </div>
+      {widgets.map((w, i) => (
+        <div key={w.id} className="settings-row widget-row">
+          <Toggle
+            checked={w.enabled}
+            onChange={(v) => setWidgetEnabled(w.id, v)}
+            label={WIDGET_REGISTRY[w.id]?.label ?? w.id}
+          />
+          <div className="widget-row-controls">
+            <button
+              className="widget-row-btn"
+              disabled={i === 0}
+              onClick={() => moveWidget(w.id, -1)}
+              aria-label="Move up"
+            >
+              <ChevronUp size={14} strokeWidth={2} />
+            </button>
+            <button
+              className="widget-row-btn"
+              disabled={i === widgets.length - 1}
+              onClick={() => moveWidget(w.id, 1)}
+              aria-label="Move down"
+            >
+              <ChevronDown size={14} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -544,6 +680,7 @@ const STATIC_TAB_CONTENT = {
   location: <LocationTab />,
   api:      <APITab />,
   display:  <DisplayTab />,
+  widgets:  <WidgetsTab />,
   radar:    <RadarTab />,
 };
 

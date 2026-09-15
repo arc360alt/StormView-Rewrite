@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Settings, MapPin, Navigation } from 'lucide-react';
 import { MapView } from './components/Map/MapView';
 import { WeatherSidebar } from './components/WeatherSidebar/WeatherSidebar';
@@ -10,10 +10,15 @@ import { RadarLoadingBar } from './components/RadarLoadingBar/RadarLoadingBar';
 import { WhatsNewModal } from './components/WhatsNewModal/WhatsNewModal';
 import { BetaModal } from './components/BetaModal/BetaModal';
 import { Spinner } from './components/ui/Spinner';
+const WeatherAssistant = lazy(() =>
+  import('./components/WeatherAssistant/WeatherAssistant').then((m) => ({ default: m.WeatherAssistant }))
+);
 import { MobileApp } from './mobile/MobileApp';
+import { WatchApp } from './watch/WatchApp';
 import { useWeather } from './hooks/useWeather';
 import { useTheme } from './hooks/useTheme';
 import { useIsMobile } from './hooks/useIsMobile';
+import { useIsWatch } from './hooks/useIsWatch';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import useAppStore from './store/useAppStore';
@@ -49,6 +54,7 @@ function GeoModal({ onAccept, onManual, loading, error }) {
 export default function App() {
   useTheme();
   const isMobile = useIsMobile();
+  const isWatch = useIsWatch();
 
   const location         = useAppStore((s) => s.location);
   const settingsOpen     = useAppStore((s) => s.settingsOpen);
@@ -90,7 +96,15 @@ export default function App() {
 
   return (
     <div className="app">
-      {useMobileLayout ? (
+      {isWatch ? (
+        /* Smartwatch experience — opt in with ?watch */
+        <WatchApp
+          weatherData={weatherData}
+          loading={weatherLoading}
+          error={weatherError}
+          onRefresh={refetch}
+        />
+      ) : useMobileLayout ? (
         /* Dedicated mobile experience — a separate scrollable weather page */
         <MobileApp
           weatherData={weatherData}
@@ -142,7 +156,7 @@ export default function App() {
       {/* Top-right corner: beta chip + settings gear.
           The new mobile layout renders its own settings controls (a header
           button on the home screen, the glass gear on the radar overlay). */}
-      {!useMobileLayout && (
+      {!useMobileLayout && !isWatch && (
         <div className="app-top-corner">
           <button
             className="app-beta-chip"
@@ -171,10 +185,17 @@ export default function App() {
       <ErrorReporter />
 
       {/* What's New modal — shows after location is set, once per version */}
-      <WhatsNewModal />
+      {!isWatch && <WhatsNewModal />}
 
       {/* Beta info modal */}
       {showBetaModal && <BetaModal onClose={() => setShowBetaModal(false)} />}
+
+      {/* On-device weather assistant (WebLLM) — lazy-loaded, not shown on watch */}
+      {!isWatch && (
+        <Suspense fallback={null}>
+          <WeatherAssistant weatherData={weatherData} />
+        </Suspense>
+      )}
 
       {/* First-launch geo modal */}
       {showGeoModal && (

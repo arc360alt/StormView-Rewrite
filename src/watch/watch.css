@@ -1,0 +1,299 @@
+/* =====================================================
+   StormView — Watch mode (Pixel Watch / Wear OS)
+   Small (often round) displays: readable text, big touch
+   targets, padding so nothing hides under the bezel.
+   ===================================================== */
+
+/* In watch mode the DOCUMENT scrolls (not a nested div) so the Wear OS
+   rotating crown can drive it. WatchApp adds .is-watch to <html>. */
+html.is-watch,
+html.is-watch body,
+html.is-watch #root {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+}
+html.is-watch #root { -webkit-overflow-scrolling: touch; }
+html.is-watch .app {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+html.is-watch ::-webkit-scrollbar { width: 0; height: 0; }
+
+.watch-app {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+/* ---- Scrollable weather page (normal document flow) ---- */
+.watch-home {
+  min-height: 100dvh;
+  padding: 12px 14px calc(44px + env(safe-area-inset-bottom));
+  outline: none;
+}
+
+/* ---- Header ---- */
+.w-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px 10px;
+}
+.w-header-loc {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-header-set {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+}
+.w-icon-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-secondary);
+}
+
+.w-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.w-notice {
+  padding: 8px 11px;
+  background: var(--warning-dim);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--warning);
+  line-height: 1.45;
+}
+
+.w-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.w-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 44px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.w-empty-btn {
+  padding: 9px 18px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.w-foot {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 0 2px;
+}
+
+/* =====================================================
+   Overrides for the reused shared components — bumped up
+   for legibility on a watch, trimmed so nothing overflows.
+   ===================================================== */
+
+/* Current conditions ("temperature gauge") */
+.watch-app .m-current {
+  padding: 14px 10px;
+  gap: 6px;
+  border-radius: var(--radius-md);
+}
+.watch-app .m-current-temp-num { font-size: 50px; letter-spacing: -1px; }
+.watch-app .m-current-temp-unit { font-size: 17px; margin-top: 6px; }
+.watch-app .m-current-condition { font-size: 15px; }
+.watch-app .m-current-stat { font-size: 12.5px; gap: 5px; }
+.watch-app .m-current-sun { padding-top: 9px; gap: 7px 14px; }
+
+/* Section cards */
+.watch-app .sidebar-section { padding: 11px 10px; }
+.watch-app .sidebar-section-title { font-size: 11px; margin-bottom: 9px; letter-spacing: 0.06em; }
+
+/* Hourly strip */
+.watch-app .hourly-scroll { gap: 4px; }
+.watch-app .hourly-item { min-width: 52px; padding: 8px 6px; gap: 5px; }
+.watch-app .hourly-time { font-size: 11.5px; }
+.watch-app .hourly-precip { font-size: 10px; }
+.watch-app .hourly-temp { font-size: 14.5px; }
+
+/* 7-day list — hide the temp-range bar to make room for bigger text */
+.watch-app .daily-row { gap: 6px; padding: 8px 3px; }
+.watch-app .daily-bar-wrap { display: none; }
+.watch-app .daily-day { font-size: 13.5px; width: 34px; }
+.watch-app .daily-precip { font-size: 11px; width: 26px; }
+.watch-app .daily-low { font-size: 13.5px; width: auto; margin-left: auto; }
+.watch-app .daily-high { font-size: 13.5px; width: auto; }
+.watch-app .daily-expand-inner { padding: 9px 4px; }
+.watch-app .dd-hourly-item { min-width: 46px; }
+.watch-app .dd-section-label { font-size: 10px; }
+
+/* Details — single column on a watch, larger values */
+.watch-app .details-grid { grid-template-columns: 1fr; gap: 6px; }
+.watch-app .detail-card { padding: 10px; gap: 9px; }
+.watch-app .detail-icon svg { width: 17px; height: 17px; }
+.watch-app .detail-label { font-size: 10.5px; }
+.watch-app .detail-value { font-size: 14px; }
+.watch-app .detail-sub { font-size: 11px; }
+
+/* Radar preview card */
+.watch-app .m-radar-preview { height: 140px; border-radius: var(--radius-md); }
+.watch-app .m-radar-preview-label,
+.watch-app .m-radar-preview-cta { font-size: 11.5px; padding: 5px 9px; }
+
+/* Alert banner */
+.watch-app .alert-banner { padding: 7px 9px; font-size: 12px; }
+.watch-app .alert-banner-title { font-size: 12px; }
+
+/* =====================================================
+   Full-screen radar — a fixed overlay above the document
+   ===================================================== */
+
+.watch-radar {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+/* Tall spacer kept in normal document flow so the crown has something to
+   scroll; WatchRadar converts that scroll into map zoom. */
+.watch-radar-sink {
+  height: 260vh;
+  width: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.watch-radar-back {
+  position: absolute;
+  top: calc(8px + env(safe-area-inset-top));
+  left: 8px;
+  z-index: 500;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.watch-radar-back:hover {
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+}
+.watch-radar-back:active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  transform: scale(0.94);
+}
+
+/* Push the Leaflet zoom controls below the back button so they don't overlap */
+.watch-radar .leaflet-top.leaflet-left {
+  margin-top: calc(52px + env(safe-area-inset-top));
+}
+
+/* Scrubber pinned tight to the bottom, trimmed down */
+.watch-radar .watch-scrubber { bottom: 6px; width: calc(100vw - 12px); min-width: 0; }
+.watch-app .scrubber-pill { padding: 8px 10px; border-radius: var(--radius-lg); }
+.watch-app .scrubber-top { gap: 7px; margin-bottom: 7px; }
+.watch-app .scrubber-time-main { font-size: 13px; }
+.watch-app .scrubber-legend { display: none; }
+.watch-app .scrubber-time-date { display: none; }
+.watch-app .scrubber-speed { display: none; }
+
+/* =====================================================
+   Round-display optimisation
+   (?watch + Settings → Display → "Round Display")
+   Keeps content inside the circle's safe zone.
+   ===================================================== */
+
+.watch-app--round.watch-home {
+  padding-left: max(18px, 8%);
+  padding-right: max(18px, 8%);
+  padding-top: 16px;
+  padding-bottom: calc(58px + env(safe-area-inset-bottom));
+}
+.watch-app--round .w-header {
+  justify-content: center;
+  padding-top: 12px;
+}
+.watch-app--round .w-header-loc { flex: 0 1 auto; }
+.watch-app--round .w-body > :first-child { margin-top: 4px; }
+.watch-app--round .w-foot { padding-bottom: 14px; }
+
+/* Round radar: back button centred top, zoom control on the mid-left edge
+   (where a circle is widest), scrubber pulled in from the sides. */
+.is-watch-round .watch-radar-back {
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(12px + env(safe-area-inset-top));
+}
+.is-watch-round .watch-radar-back:active { transform: translateX(-50%) scale(0.94); }
+.is-watch-round .watch-radar .leaflet-top.leaflet-left {
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0 0 0 4px;
+}
+.is-watch-round .watch-radar .watch-scrubber {
+  bottom: 14px;
+  width: calc(100vw - 44px);
+}
+
+/* Round: pull the settings panel's chrome in from the clipped corners
+   (the close button was falling off the top-right). */
+.is-watch-round .settings-header {
+  padding: 24px max(20px, 12%) 12px;
+}
+.is-watch-round .settings-tabs {
+  padding-left: max(14px, 9%);
+  padding-right: max(14px, 9%);
+}
+.is-watch-round .settings-body {
+  padding-left: max(14px, 8%);
+  padding-right: max(14px, 8%);
+  padding-bottom: 40px;
+}

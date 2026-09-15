@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-import { Sunrise, Sunset } from 'lucide-react';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import useAppStore from '../../store/useAppStore';
 import './CurrentConditions.css';
@@ -41,20 +39,6 @@ export function CurrentConditions({ data }) {
           <span className="hilow-high">↑ {data.daily[0].tempMax}{tempUnit}</span>
           <span className="hilow-sep" />
           <span className="hilow-low">↓ {data.daily[0].tempMin}{tempUnit}</span>
-        </div>
-      )}
-
-      {/* Sunrise / Sunset */}
-      {(cu.sunrise || data.daily?.[0]?.sunrise) && (
-        <div className="current-sun">
-          <div className="sun-item">
-            <Sunrise size={13} strokeWidth={1.8} style={{ color: '#FBBF24' }} />
-            <span>{format(cu.sunrise ?? data.daily[0].sunrise, 'h:mm a')}</span>
-          </div>
-          <div className="sun-item">
-            <Sunset size={13} strokeWidth={1.8} style={{ color: '#F97316' }} />
-            <span>{format(cu.sunset ?? data.daily[0].sunset, 'h:mm a')}</span>
-          </div>
         </div>
       )}
     </div>

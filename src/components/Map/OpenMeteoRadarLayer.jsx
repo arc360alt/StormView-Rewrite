@@ -35,13 +35,19 @@ export function OpenMeteoRadarLayer() {
   const currentIdx = useAppStore((s) => s.radarCurrentIdx);
   const opacity    = useAppStore((s) => s.radarOpacity);
   const variable   = useAppStore((s) => s.openmeteoVariable);
+  const themePref  = useAppStore((s) => s.theme);
   const setProgress = useAppStore((s) => s.setRadarTileProgress);
+
+  const isDark = themePref === 'dark'
+    || (themePref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const layers    = useRef(new Map()); // omUrl -> L.GridLayer
   const activeUrl = useRef(null);
 
   const frameUrl = (f) =>
-    f && f.run && f.valid ? buildOmUrl(f.domain, f.run, f.valid, variable) : null;
+    f && f.run && f.valid
+      ? buildOmUrl(f.domain, f.run, f.valid, variable, { dark: isDark })
+      : null;
 
   /* Dedicated pane: above the base map (200), below vector overlays (400). */
   useEffect(() => {
@@ -75,7 +81,7 @@ export function OpenMeteoRadarLayer() {
     setProgress(null);
   }, [map, setProgress]);
 
-  /* Windowed load + show current frame. Re-runs when the variable changes. */
+  /* Windowed load + show current frame. Re-runs on variable / theme change. */
   useEffect(() => {
     if (!frames.some((f) => f?.run && f?.valid)) return;
 
@@ -115,7 +121,7 @@ export function OpenMeteoRadarLayer() {
       layers.current.get(curUrl)?.setOpacity(opacity);
       activeUrl.current = curUrl;
     }
-  }, [map, frames, currentIdx, opacity, variable]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, frames, currentIdx, opacity, variable, isDark]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Opacity slider — live-update the visible frame. */
   useEffect(() => {
