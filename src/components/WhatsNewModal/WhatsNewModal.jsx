@@ -1,34 +1,34 @@
 import { useState } from 'react';
-import { X, Wind, Layers, Radar, Activity } from 'lucide-react';
+import { X, LayoutGrid, Palette, Sparkles, Activity } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import './WhatsNewModal.css';
 
 // ─── DEVELOPER: bump version to re-show for all users; set name for this release ─
-export const WHATS_NEW_VERSION = '3.5.0';
-export const WHATS_NEW_NAME    = 'New mobile interface';
+export const WHATS_NEW_VERSION = '3.6.0';
+export const WHATS_NEW_NAME    = 'Widgets, themes & AI assistant';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
   {
-    icon: Layers,
+    icon: LayoutGrid,
     color: '#22c55e',
     bg: 'rgba(34,197,94,0.12)',
-    title: 'New Mobile Layout',
-    desc: 'Completly remade mobile interface for a better user experience.',
+    title: 'Customizable Widgets',
+    desc: 'A new Widgets tab in Settings lets you show, hide, and reorder your homepage sections — plus three new ones to add: Sunrise & Sunset, Air Quality, and a Wind Compass.',
   },
   {
-    icon: Wind,
-    color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.12)',
-    title: 'Hourly Info Panel',
-    desc: 'Adds a new panel that shows up when you click on one of the hours under the hourly section that gives you more weather info about that specific hour.',
+    icon: Palette,
+    color: '#a855f7',
+    bg: 'rgba(168,85,247,0.12)',
+    title: 'More Color Themes',
+    desc: 'Four new built-in themes — Ocean, Sunset, Forest, and Crimson — plus a full custom theme builder to pick your own background, accent, and text colors.',
   },
   {
-    icon: Radar,
+    icon: Sparkles,
     color: '#38bdf8',
     bg: 'rgba(56,189,248,0.12)',
-    title: 'Open-Meteo Radar',
-    desc: 'A new radar source you can pick in Settings → Radar. Global model data rendered right in your browser — very fast, with a dropdown to switch between precipitation, temperature, clouds, wind and dozens of other layers.',
+    title: 'On-Device Weather Assistant',
+    desc: 'A new floating chat button runs a small AI model right in your browser — nothing is sent to a server. Ask it about your forecast, alerts, or air quality and it answers using your real, live data.',
   },
   {
     icon: Activity,
