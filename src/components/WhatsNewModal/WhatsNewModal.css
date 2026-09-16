@@ -17,6 +17,10 @@
 }
 .wn-overlay--out {
   animation: wnFadeOut 0.2s ease both;
+  /* Belt-and-suspenders: a fading-out full-screen fixed overlay stays in the
+     hit-testing layer even at opacity 0 unless pointer-events is disabled —
+     don't let a closing (or stuck) modal block touches/clicks underneath it. */
+  pointer-events: none;
 }
 
 .wn-modal {

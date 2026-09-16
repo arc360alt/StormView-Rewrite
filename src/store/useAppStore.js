@@ -18,7 +18,8 @@ const useAppStore = create(
   persist(
     (set, get) => ({
       // ---- Persisted settings ----
-      theme: 'light',           // 'dark' | 'light' | 'system' | 'ocean' | 'sunset' | 'forest' | 'crimson' | 'custom'
+      theme: 'light',           // 'dark' | 'light' | 'system' | 'custom' — the light/dark mode axis
+      colorPreset: 'default',  // 'default' | 'ocean' | 'sunset' | 'forest' | 'crimson' — accent flavor, applied on top of the mode (ignored when theme === 'custom')
       customTheme: DEFAULT_CUSTOM_THEME,
       widgets: DEFAULT_WIDGETS, // [{ id, enabled }] — order + visibility of optional home-screen sections
       detailsFields: DEFAULT_DETAILS_FIELDS, // { fieldKey: enabled } — which info cards show in the Weather Details widget
@@ -61,6 +62,7 @@ const useAppStore = create(
 
       // ---- Setters: settings ----
       setTheme: (theme) => set({ theme }),
+      setColorPreset: (colorPreset) => set({ colorPreset }),
       setCustomTheme: (patch) => set((s) => ({ customTheme: { ...s.customTheme, ...patch } })),
       setAssistantModel: (id) => set({ assistantModel: id }),
       setWidgetEnabled: (id, enabled) => set((s) => ({
@@ -148,6 +150,16 @@ const useAppStore = create(
       // always have a valid initial value even when loading older stored data.
       merge: (persisted, current) => {
         const merged = { ...current, ...persisted };
+        // Named color presets used to BE the `theme` value (e.g. theme: 'ocean'),
+        // locking each one to a single dark palette. They're now a separate
+        // `colorPreset` axis layered on top of light/dark mode — normalize any
+        // old persisted value so users who picked one before this change don't
+        // silently fall back to the plain default theme.
+        const OLD_PRESET_IDS = ['ocean', 'sunset', 'forest', 'crimson'];
+        if (OLD_PRESET_IDS.includes(persisted?.theme)) {
+          merged.colorPreset = persisted.theme;
+          merged.theme = 'dark';
+        }
         // `widgets` is an array, so the generic spread above takes the user's
         // saved list wholesale — any widget id added to DEFAULT_WIDGETS after
         // they last saved would otherwise never appear. Reconcile: keep the
@@ -165,6 +177,7 @@ const useAppStore = create(
       },
       partialize: (s) => ({
         theme: s.theme,
+        colorPreset: s.colorPreset,
         customTheme: s.customTheme,
         widgets: s.widgets,
         detailsFields: s.detailsFields,
