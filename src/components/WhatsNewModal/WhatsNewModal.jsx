@@ -46,9 +46,11 @@ export function WhatsNewModal() {
 
   const [neverShow, setNeverShow] = useState(false);
   const [closing,   setClosing]   = useState(false);
+  const [sessionDismissed, setSessionDismissed] = useState(false);
 
-  // Show when: location is set AND this version hasn't been permanently dismissed
-  const shouldShow = !!location && dismissedVersion !== WHATS_NEW_VERSION;
+  // Show when: location is set, not dismissed for this session, and this
+  // version hasn't been permanently dismissed.
+  const shouldShow = !!location && !sessionDismissed && dismissedVersion !== WHATS_NEW_VERSION;
 
   if (!shouldShow) return null;
 
@@ -59,9 +61,13 @@ export function WhatsNewModal() {
         // Permanently dismissed for this version — persists across reloads
         setDismissedVersion(WHATS_NEW_VERSION);
       } else {
-        // Session-only: use a prefix so it never matches the real version string,
-        // meaning the modal will show again on next page load
-        setDismissedVersion('__seen__' + WHATS_NEW_VERSION);
+        // Session-only — plain local state, resets on next page load. (This
+        // used to be faked with a sentinel string written to the persisted
+        // store specifically so it wouldn't equal WHATS_NEW_VERSION — which
+        // meant `shouldShow` above stayed true forever, the component never
+        // unmounted, and its full-screen fixed overlay sat invisibly on top
+        // of the whole app eating every touch/click until a reload.)
+        setSessionDismissed(true);
       }
     }, 200);
   };

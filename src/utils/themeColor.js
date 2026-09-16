@@ -33,29 +33,81 @@ export function isLightBg(hex) {
   return luminance(hex) >= 0.5;
 }
 
-/** Curated built-in themes selectable from Settings, beyond the custom builder. */
-export const THEME_PRESETS = [
+/** Color Mode — the light/dark/system/custom axis. */
+export const MODE_OPTIONS = [
   { id: 'dark', label: 'Dark' },
   { id: 'light', label: 'Light' },
   { id: 'system', label: 'System' },
+  { id: 'custom', label: 'Custom' },
+];
+
+/**
+ * Color Preset — the accent/flavor axis, applied on top of whichever mode
+ * (light or dark) is active. Each preset ships both a light and a dark base
+ * palette, expanded through `deriveThemeVars` — the same function the custom
+ * builder uses — so every preset works properly in both modes instead of
+ * being locked to one, and there's only one code path to keep correct.
+ * `default` means "no override" — the plain stylesheet dark/light block.
+ */
+export const COLOR_PRESET_OPTIONS = [
+  { id: 'default', label: 'Default' },
   { id: 'ocean', label: 'Ocean' },
   { id: 'sunset', label: 'Sunset' },
   { id: 'forest', label: 'Forest' },
   { id: 'crimson', label: 'Crimson' },
-  { id: 'custom', label: 'Custom' },
 ];
 
-/** Swatch preview colors for the CSS-defined presets (bg/accent only — just
- *  enough to render a small gradient chip in Settings without reading computed
- *  styles). Must stay in sync with the `[data-theme="..."]` blocks in index.css. */
-export const PRESET_PREVIEW = {
-  dark: { bg: '#090910', accent: '#4f8ef5' },
-  light: { bg: '#e8edf5', accent: '#2563eb' },
-  ocean: { bg: '#071620', accent: '#22d3ee' },
-  sunset: { bg: '#1a0f0a', accent: '#fb923c' },
-  forest: { bg: '#0c1410', accent: '#4ade80' },
-  crimson: { bg: '#160709', accent: '#f43f5e' },
+export const COLOR_PRESETS = {
+  ocean: {
+    dark: { bg: '#071620', surface: '#0c2333', textPrimary: '#e4f2f7', textSecondary: '#7fa8b8', accent: '#22d3ee', warning: '#f59e0b', danger: '#ef4444', success: '#10b981' },
+    light: { bg: '#eef8fb', surface: '#ffffff', textPrimary: '#0b2733', textSecondary: '#4f7688', accent: '#0891b2', warning: '#d97706', danger: '#dc2626', success: '#059669' },
+  },
+  sunset: {
+    dark: { bg: '#1a0f0a', surface: '#241510', textPrimary: '#f5e9df', textSecondary: '#b89380', accent: '#fb923c', warning: '#f59e0b', danger: '#ef4444', success: '#10b981' },
+    light: { bg: '#fdf3ea', surface: '#ffffff', textPrimary: '#3a2213', textSecondary: '#8a6650', accent: '#ea580c', warning: '#d97706', danger: '#dc2626', success: '#059669' },
+  },
+  forest: {
+    dark: { bg: '#0c1410', surface: '#131f19', textPrimary: '#e6f2ea', textSecondary: '#83a893', accent: '#4ade80', warning: '#f59e0b', danger: '#ef4444', success: '#10b981' },
+    light: { bg: '#f0f7f2', surface: '#ffffff', textPrimary: '#132318', textSecondary: '#547063', accent: '#16a34a', warning: '#d97706', danger: '#dc2626', success: '#059669' },
+  },
+  crimson: {
+    dark: { bg: '#160709', surface: '#210b0e', textPrimary: '#f7e6e8', textSecondary: '#c08890', accent: '#f43f5e', warning: '#f59e0b', danger: '#ef4444', success: '#10b981' },
+    light: { bg: '#fdf1f2', surface: '#ffffff', textPrimary: '#3a1216', textSecondary: '#8a5a60', accent: '#e11d48', warning: '#d97706', danger: '#dc2626', success: '#059669' },
+  },
 };
+
+/** Swatch preview colors, keyed by [presetId][mode] — just enough to render a
+ *  small chip in Settings without reading computed styles. `default` mirrors
+ *  the plain stylesheet dark/light blocks in index.css. */
+export const PRESET_PREVIEW = {
+  default: {
+    dark: { bg: '#090910', accent: '#4f8ef5' },
+    light: { bg: '#e8edf5', accent: '#2563eb' },
+  },
+  ocean: {
+    dark: { bg: COLOR_PRESETS.ocean.dark.bg, accent: COLOR_PRESETS.ocean.dark.accent },
+    light: { bg: COLOR_PRESETS.ocean.light.bg, accent: COLOR_PRESETS.ocean.light.accent },
+  },
+  sunset: {
+    dark: { bg: COLOR_PRESETS.sunset.dark.bg, accent: COLOR_PRESETS.sunset.dark.accent },
+    light: { bg: COLOR_PRESETS.sunset.light.bg, accent: COLOR_PRESETS.sunset.light.accent },
+  },
+  forest: {
+    dark: { bg: COLOR_PRESETS.forest.dark.bg, accent: COLOR_PRESETS.forest.dark.accent },
+    light: { bg: COLOR_PRESETS.forest.light.bg, accent: COLOR_PRESETS.forest.light.accent },
+  },
+  crimson: {
+    dark: { bg: COLOR_PRESETS.crimson.dark.bg, accent: COLOR_PRESETS.crimson.dark.accent },
+    light: { bg: COLOR_PRESETS.crimson.light.bg, accent: COLOR_PRESETS.crimson.light.accent },
+  },
+};
+
+/** All CSS variable names `deriveThemeVars` can set — used to clear inline
+ *  overrides when switching back to the plain stylesheet (`default` preset). */
+export const THEME_VAR_KEYS = Object.keys(deriveThemeVars({
+  bg: '#000000', surface: '#000000', textPrimary: '#000000', textSecondary: '#000000',
+  accent: '#000000', warning: '#000000', danger: '#000000', success: '#000000',
+}));
 
 /**
  * Expands the user's ~8 picked base colors into the full CSS variable set the

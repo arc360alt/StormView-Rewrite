@@ -5,7 +5,7 @@ import { Toggle } from '../ui/Toggle';
 import { NotificationSettings } from '../NotificationSettings/NotificationSettings';
 import { fetchOpenMeteoLayers, DOMAINS } from '../../services/openmeteoRadar';
 import { WIDGET_REGISTRY, DETAILS_FIELD_LABELS } from '../widgets/registry';
-import { THEME_PRESETS, PRESET_PREVIEW } from '../../utils/themeColor';
+import { MODE_OPTIONS, COLOR_PRESET_OPTIONS, PRESET_PREVIEW, isLightBg } from '../../utils/themeColor';
 import { useIsWatch } from '../../hooks/useIsWatch';
 import useAppStore from '../../store/useAppStore';
 import './SettingsSidebar.css';
@@ -173,6 +173,8 @@ function DisplayTab() {
   const isWatch = useIsWatch();
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
+  const colorPreset = useAppStore((s) => s.colorPreset);
+  const setColorPreset = useAppStore((s) => s.setColorPreset);
   const customTheme = useAppStore((s) => s.customTheme);
   const setCustomTheme = useAppStore((s) => s.setCustomTheme);
   const sidebarPosition = useAppStore((s) => s.sidebarPosition);
@@ -182,25 +184,32 @@ function DisplayTab() {
   const watchRoundDisplay = useAppStore((s) => s.watchRoundDisplay);
   const setWatchRoundDisplay = useAppStore((s) => s.setWatchRoundDisplay);
 
+  // A read-only echo of useTheme()'s own resolution — used only to preview
+  // color-preset swatches in the right mode, not to apply anything itself.
+  const resolvedMode = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme === 'custom'
+      ? (isLightBg(customTheme.bg) ? 'light' : 'dark')
+      : theme;
+
   return (
     <>
       <div className="settings-group">
-        <div className="settings-group-label">Theme</div>
+        <div className="settings-group-label">Mode</div>
         <div className="theme-swatch-grid">
-          {THEME_PRESETS.map((p) => {
-            const preview = p.id === 'system'
+          {MODE_OPTIONS.map((m) => {
+            const preview = m.id === 'system'
               ? { gradient: 'linear-gradient(90deg, #090910 50%, #e8edf5 50%)' }
-              : p.id === 'custom'
+              : m.id === 'custom'
                 ? { bg: customTheme.bg, accent: customTheme.accent }
-                : PRESET_PREVIEW[p.id];
+                : PRESET_PREVIEW.default[m.id];
             return (
               <ThemeSwatch
-                key={p.id}
-                id={p.id}
-                label={p.label}
-                active={theme === p.id}
+                key={m.id}
+                label={m.label}
+                active={theme === m.id}
                 preview={preview}
-                onClick={() => setTheme(p.id)}
+                onClick={() => setTheme(m.id)}
               />
             );
           })}
@@ -221,6 +230,26 @@ function DisplayTab() {
           </div>
         )}
       </div>
+
+      {theme !== 'custom' && (
+        <div className="settings-group">
+          <div className="settings-group-label">Color Preset</div>
+          <div className="settings-row-sub" style={{ marginBottom: 10 }}>
+            An accent flavor layered on top of your chosen mode — works in both Light and Dark.
+          </div>
+          <div className="theme-swatch-grid">
+            {COLOR_PRESET_OPTIONS.map((p) => (
+              <ThemeSwatch
+                key={p.id}
+                label={p.label}
+                active={colorPreset === p.id}
+                preview={PRESET_PREVIEW[p.id][resolvedMode]}
+                onClick={() => setColorPreset(p.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="settings-group">
         <div className="settings-group-label">Layout</div>
